@@ -54,30 +54,3 @@ class Units(TimestampModel, UserFields, table=True):
     name: str = Field(regex=REGEX_WORDS)
     abbreviation: str = Field(regex=REGEX_WORDS)
     base: int
-
-class Recipes(TimestampModel, UserFields, table=True):
-    __tablename__ = 'recipes'
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(regex=REGEX_WORDS)
-    description: str = None
-    timing: str = Field(regex=REGEX_WORDS)
-    type: str = Field(regex=REGEX_WORDS)
-    course: str = Field(regex=REGEX_WORDS)
-
-class Ingredients(TimestampModel, UserFields, table=True):
-    __tablename__ = 'ingredients'
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(regex=REGEX_WORDS)
-    description: str = None
-    type: str = Field(regex=REGEX_WORDS)
-
-class RecipeIngredients(TimestampModel, UserFields, table=True):
-    __tablename__ = 'recipe_ingredients'
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    id_recipe: int = Field(foreign_key='recipes.id')
-    id_ingredient: int = Field(foreign_key='ingredients.id')
-    quantity: int
-    id_unit: int = Field(foreign_key='units.id')

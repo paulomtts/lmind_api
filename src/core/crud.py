@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
-from src.core.models import Categories, Units, Recipes, Ingredients, RecipeIngredients
+from src.core.models import Categories, Units
 from src.core.schemas import DBOutput, APIOutput, CRUDSelectInput, CRUDDeleteInput, CRUDInsertInput, CRUDUpdateInput, SuccessMessages
 from src.core.methods import api_output, append_user_credentials
 from src.core.auth import validate_session
 from src.core.start import db
+from src.core.queries import *
+
+
+from collections import namedtuple
 
 
 crud_router = APIRouter()
@@ -13,13 +17,13 @@ crud_router = APIRouter()
 TABLE_MAP = {
     'categories': Categories
     , 'units': Units
-    , 'recipes': Recipes
-    , 'ingredients': Ingredients
-    , 'recipe_ingredients': RecipeIngredients
 }
 
-################# DEVELOPMENT ONLY #################
-@crud_router.post("/crud/insert")
+ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])
+QUERY_MAP = {}
+
+
+@crud_router.post("/custom/crud/insert")
 async def crud_insert(input: CRUDInsertInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Inserts data into the specified table.
@@ -52,8 +56,8 @@ async def crud_insert(input: CRUDInsertInput, id_user: str = Depends(validate_se
     return crud__insert(table_cls, input.data)
 
 
-@crud_router.post("/crud/select", dependencies=[Depends(validate_session)])
-async def crud_select(input: CRUDSelectInput) -> APIOutput:
+@crud_router.post("/custom/crud/select")
+async def crud_select(input: CRUDSelectInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Selects data from a specified table in the database based on the provided filters.
 
@@ -97,25 +101,31 @@ async def crud_select(input: CRUDSelectInput) -> APIOutput:
         <li>JSONResponse: The response containing the selected data and a message.</li>
         </ul>
     """
+
+    input.lambda_kwargs['id_user'] = id_user
+
     table_cls = TABLE_MAP.get(input.table_name)
 
-    if not table_cls:
-        raise HTTPException(status_code=400, detail=f"Table <{input.table_name}> does not exist.")
-
+    query = QUERY_MAP.get(input.table_name, ComplexQuery(None, None))
+    statement = query.statement if not callable(query.statement)\
+                                else query.statement(**input.lambda_kwargs if input.lambda_kwargs else {}) 
     messages = SuccessMessages(
-        client=f"{input.table_name.capitalize()[:-1]} retrieved."
+        client=f"{input.table_name.capitalize()[:-1]} retrieved." if table_cls else f"{query.name.capitalize()} retrieved."
         , logger=f"Querying <{input.table_name}> was succesful! Filters: {input.filters}"
     )
 
+    if isinstance(input.filters.and_, dict):
+        input.filters.or_['created_by'] = [id_user, 'system']
+
     @api_output
     @db.catching(messages=messages)
-    def crud__select(table_cls, filters):
-        return db.query(table_cls=table_cls, filters=filters)
+    def crud__select(table_cls, statement, filters):
+        return db.query(table_cls=table_cls, statement=statement, filters=filters)
 
-    return crud__select(table_cls, input.filters)
+    return crud__select(table_cls, statement, input.filters)
 
 
-@crud_router.put("/crud/update")
+@crud_router.put("/custom/crud/update")
 async def crud_update(input: CRUDUpdateInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Update a record in the specified table.
@@ -148,8 +158,8 @@ async def crud_update(input: CRUDUpdateInput, id_user: str = Depends(validate_se
     return crud__update(table_cls, input.data)
 
 
-@crud_router.delete("/crud/delete", dependencies=[Depends(validate_session)])
-async def crud_delete(input: CRUDDeleteInput) -> APIOutput:
+@crud_router.delete("/custom/crud/delete")
+async def crud_delete(input: CRUDDeleteInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Delete records from a specified table based on the provided filters. Filters example:
     <pre>
@@ -177,10 +187,12 @@ async def crud_delete(input: CRUDDeleteInput) -> APIOutput:
         , logger=f"Delete in {input.table_name.capitalize()} was successful. Filters: {input.filters}"
     )
 
+    if isinstance(input.filters.and_, dict):
+        input.filters.and_['created_by'] = [id_user]
+
     @api_output
     @db.catching(messages=messages)
     def crud__delete(table_cls, filters):
         return db.delete(table_cls, filters)
     
     return crud__delete(table_cls, input.filters)
-################# DEVELOPMENT ONLY #################
