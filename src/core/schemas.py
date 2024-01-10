@@ -33,7 +33,6 @@ class TableNames(BaseModel):
             
         return value
     
-
 class WhereConditions(BaseModel):
     or_: Optional[dict[str, List[str | int]]] = {}
     and_: Optional[dict[str, List[str | int]]] = {}
