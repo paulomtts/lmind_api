@@ -42,13 +42,13 @@ class MissingSessionError(BaseException):
     """
 
 
-def validate_session(response: Response, request: Request, cbk_s: Annotated[str | None, Cookie()]):
+def validate_session(response: Response, request: Request, jwt_s: Annotated[str | None, Cookie()]):
     """
     Validate the session cookie. If the cookie is valid, extend the expiration,
     otherwise, delete the cookie.
     """
     try:
-        session_cookie = cbk_s.encode('utf-8')
+        session_cookie = jwt_s.encode('utf-8')
 
         hashed_user_agent = hash_plaintext(json.dumps(request.headers.get("User-Agent")))
         hashed_user_agent = base64.b64encode(hashed_user_agent).decode('utf-8')
@@ -87,7 +87,7 @@ def validate_session(response: Response, request: Request, cbk_s: Annotated[str 
 
     except Exception as e:
         db.logger.error(f"An error occurred while validating a session: \n{e}")
-        response.delete_cookie(key="cbk_s")
+        response.delete_cookie(key="jwt_s")
         raise HTTPException(status_code=401, detail="Unauthorized access.", headers=response.headers)
 
 
@@ -164,14 +164,12 @@ async def auth_callback(request: Request, code: str = Query(...)):
                 user = db.upsert(Users, [user_data], single=True)
                 if user:
                     db.upsert(Sessions, [session_data])
-
-                return []
             
             db_output: DBOutput = auth__initiate_session(user_data, session_data)
 
             if 200 <= response.status_code < 300:
                 response = RedirectResponse(url=f"{FRONTEND_REDIRECT_URI}", headers=request.headers)
-                response.set_cookie(key="cbk_s", value=jwt_token, httponly=True, samesite='none', secure=True, expires=(60 * 60 * 24 * 7))
+                response.set_cookie(key="jwt_s", value=jwt_token, httponly=True, samesite='none', secure=True, expires=(60 * 60 * 24 * 7))
                 return response
 
             raise HTTPException(status_code=db_output.status, detail=db_output.message)
@@ -186,5 +184,5 @@ async def auth_validate():
 
 @auth_router.get('/auth/logout')
 async def auth_logout(response: Response):
-    response.delete_cookie(key="cbk_s", httponly=True, samesite='none', secure=True)
+    response.delete_cookie(key="jwt_s", httponly=True, samesite='none', secure=True)
     return JSONResponse(status_code=200, content={"message": "Session has been terminated."}, headers=response.headers)
