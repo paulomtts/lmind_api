@@ -23,7 +23,7 @@ ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])
 QUERY_MAP = {}
 
 
-@crud_router.post("/custom/crud/insert")
+@crud_router.post("/crud/insert")
 async def crud_insert(input: CRUDInsertInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Inserts data into the specified table.
@@ -56,7 +56,7 @@ async def crud_insert(input: CRUDInsertInput, id_user: str = Depends(validate_se
     return crud__insert(table_cls, input.data)
 
 
-@crud_router.post("/custom/crud/select")
+@crud_router.post("/crud/select")
 async def crud_select(input: CRUDSelectInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Selects data from a specified table in the database based on the provided filters.
@@ -125,7 +125,7 @@ async def crud_select(input: CRUDSelectInput, id_user: str = Depends(validate_se
     return crud__select(table_cls, statement, input.filters)
 
 
-@crud_router.put("/custom/crud/update")
+@crud_router.put("/crud/update")
 async def crud_update(input: CRUDUpdateInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Update a record in the specified table.
@@ -158,7 +158,7 @@ async def crud_update(input: CRUDUpdateInput, id_user: str = Depends(validate_se
     return crud__update(table_cls, input.data)
 
 
-@crud_router.delete("/custom/crud/delete")
+@crud_router.delete("/crud/delete")
 async def crud_delete(input: CRUDDeleteInput, id_user: str = Depends(validate_session)) -> APIOutput:
     """
     Delete records from a specified table based on the provided filters. Filters example:
