@@ -53,5 +53,5 @@ async def get_user(id_user: str = Depends(validate_session)):
         FilteredUser = namedtuple('FilteredUser', ['name', 'picture'])
 
         return FilteredUser(user.name, user.google_picture_url)
-    
+
     return get_user(id_user)
