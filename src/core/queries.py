@@ -3,7 +3,7 @@
 # imported into the CRUD router for use.
 
 from sqlmodel import select, func, literal, case
-from src.core.models import Units
+from src.core.models import TSysSymbols
 
 
 # These queries allow for a single table to exhibit all ingredients, including those that are not part of the recipe

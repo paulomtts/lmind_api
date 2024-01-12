@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Response, Cookie, Query, 
 from fastapi.responses import RedirectResponse, JSONResponse
 
 from src.core.start import db
-from src.core.models import Users, Sessions
+from src.core.models import TSysRoles, TSysUsers, TSysSessions
 from src.core.schemas import SuccessMessages, DBOutput, WhereConditions
 from src.core.security import generate_session_token, hash_plaintext, generate_jwt, decode_jwt
 
@@ -31,7 +31,7 @@ auth_router = APIRouter()
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI')
-FRONTEND_REDIRECT_URI = os.getenv('FRONTEND_REDIRECT_URL')
+FRONTEND_REDIRECT_URL = os.getenv('FRONTEND_REDIRECT_URL')
 ############# DEVELOPMENT ONLY #############
 
 class MissingSessionError(BaseException):
@@ -70,7 +70,7 @@ def validate_session(response: Response, request: Request, jwt_s: Annotated[str 
             }
 
             filters = WhereConditions(and_=session_data)
-            session = db.query(Sessions, filters=filters, single=True)
+            session = db.query(TSysSessions, filters=filters, single=True)
 
             if session:
                 return True
@@ -80,12 +80,12 @@ def validate_session(response: Response, request: Request, jwt_s: Annotated[str 
         is_valid_session, _, _ = auth__validate_session(decoded_token, hashed_user_agent, client_ip)
 
         if not is_valid_session:
-            db.logger.error("Session token belonged to us, but no session matched it's data. Was this cookie stolen?")
+            db.logger.error("Session token belongs to us, but no session matched it's data. Was this token stolen?")
             raise MissingSessionError("No session could be found matching the provided session token.")
         
         return decoded_token.get("google_id")
 
-    except Exception as e:
+    except (Exception, MissingSessionError) as e:
         db.logger.error(f"An error occurred while validating a session: \n{e}")
         response.delete_cookie(key="jwt_s")
         raise HTTPException(status_code=401, detail="Unauthorized access.", headers=response.headers)
@@ -160,19 +160,33 @@ async def auth_callback(request: Request, code: str = Query(...)):
 
             @db.catching(SuccessMessages(client="User was successfully authenticated.", logger="User authenticated. Session initiated."))
             def auth__initiate_session(user_data, session_data):
-                
-                user = db.upsert(Users, [user_data], single=True)
+
+                filters = WhereConditions(and_={'email': [user_data.get("google_email")]})
+                user = db.query(TSysRoles, filters=filters, single=True)
+
                 if user:
-                    db.upsert(Sessions, [session_data])
+                    user_data['id_role'] = user.id
+                    google_user = db.upsert(TSysUsers, [user_data], single=True)
+
+                    if google_user:
+                        session_data['id_role'] = user.id
+                        db.upsert(TSysSessions, [session_data])
+
+                        return True
+                return False
             
             db_output: DBOutput = auth__initiate_session(user_data, session_data)
+            is_session_initiated = db_output.data
 
-            if 200 <= response.status_code < 300:
-                response = RedirectResponse(url=f"{FRONTEND_REDIRECT_URI}", headers=request.headers)
+            url = f"{FRONTEND_REDIRECT_URL}" if is_session_initiated else f"{FRONTEND_REDIRECT_URL}?login=false"
+            
+            response = RedirectResponse(url=url, headers=request.headers)
+            
+            if is_session_initiated:
                 response.set_cookie(key="jwt_s", value=jwt_token, httponly=True, samesite='none', secure=True, expires=(60 * 60 * 24 * 7))
-                return response
+            
+            return response
 
-            raise HTTPException(status_code=db_output.status, detail=db_output.message)
         raise HTTPException(status_code=401, detail="Invalid or expired session")
     raise HTTPException(status_code=401, detail="Bad request.")
 

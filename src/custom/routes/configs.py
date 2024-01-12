@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from src.core.auth import validate_session
 from src.core.methods import api_output
-from src.core.models import Users
+from src.core.models import TSysUsers
 from src.core.schemas import DBOutput, SuccessMessages, WhereConditions
 
 from src.core.start import db
@@ -48,7 +48,7 @@ async def get_user(id_user: str = Depends(validate_session)):
     @db.catching(messages=SuccessMessages('User retrieved!'))
     def get_user(id_user: str) -> DBOutput:
         filters = WhereConditions(and_={'google_id': [id_user]})
-        user = db.query(Users, filters=filters, single=True)
+        user = db.query(TSysUsers, filters=filters, single=True)
 
         FilteredUser = namedtuple('FilteredUser', ['name', 'picture'])
 

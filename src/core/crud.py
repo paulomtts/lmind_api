@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from src.core.models import Categories, Units
+from src.core.models import TSysSymbols
 from src.core.schemas import DBOutput, APIOutput, CRUDSelectInput, CRUDDeleteInput, CRUDInsertInput, CRUDUpdateInput, SuccessMessages
 from src.core.methods import api_output, append_user_credentials
 from src.core.auth import validate_session
@@ -15,8 +15,7 @@ crud_router = APIRouter()
 
 
 TABLE_MAP = {
-    'categories': Categories
-    , 'units': Units
+    'tsys_symbols': TSysSymbols
 }
 
 ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])

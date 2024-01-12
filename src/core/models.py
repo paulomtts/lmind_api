@@ -16,41 +16,45 @@ class TimestampModel(SQLModel):
     # Note: sqalchemy's .on_conflict_do_update() does not trigger onupdate events 
     # see the post at https://github.com/sqlalchemy/sqlalchemy/discussions/5903#discussioncomment-327672
 
-class UserFields(SQLModel):
+class UserstampModel(SQLModel):
     created_by: str = Field(regex=REGEX_NUMBERS)
     updated_by: str = Field(regex=REGEX_NUMBERS)
     
 
-class Users(TimestampModel, table=True):
-    __tablename__ = 'users'
+# TSYS
+class TSysRoles(SQLModel, table=True):
+    __tablename__ = 'tsys_roles'
 
-    google_id: Optional[str] = Field(default=None, regex=REGEX_NUMBERS, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(regex=EMAIL_REGEX)
+    role: str = Field(regex=REGEX_WORDS)
+    level: int = Field(default=1)
+
+class TSysUsers(TimestampModel, table=True):
+    __tablename__ = 'tsys_users'
+
+    id_role: Optional[int] = Field(foreign_key='tsys_roles.id', primary_key=True)
+    google_id: Optional[str] = Field(default=None, regex=REGEX_NUMBERS)
     google_email: str = Field(regex=EMAIL_REGEX)
     google_picture_url: str = Field(regex=URL_REGEX)
     google_access_token: str
     name: str = Field(regex=REGEX_WORDS)
     locale: str = Field(regex=REGEX_WORDS)
 
-class Sessions(TimestampModel, table=True):
-    __tablename__ = 'sessions'
+class TSysSessions(TimestampModel, table=True):
+    __tablename__ = 'tsys_sessions'
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    google_id: str = Field(foreign_key='users.google_id', regex=REGEX_NUMBERS)
+    google_id: Optional[str] = Field(default=None, regex=REGEX_NUMBERS, primary_key=True)
+    id_role: Optional[int] = Field(foreign_key='tsys_roles.id')
     token: str = Field(regex=REGEX_SHA256)
     user_agent: str = Field(regex=REGEX_SHA256)
     client_ip: str = Field(regex=REGEX_IP)
 
-class Categories(TimestampModel, UserFields, table=True):
-    __tablename__ = 'categories'
+class TSysSymbols(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tsys_symbols'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(regex=REGEX_WORDS)
+    short: str = Field(regex=REGEX_WORDS)
+    long: str = Field(regex=REGEX_WORDS)
+    base: int = Field(default=1)
     type: str = Field(regex=REGEX_WORDS)
-
-class Units(TimestampModel, UserFields, table=True):
-    __tablename__ = 'units'
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(regex=REGEX_WORDS)
-    abbreviation: str = Field(regex=REGEX_WORDS)
-    base: int
