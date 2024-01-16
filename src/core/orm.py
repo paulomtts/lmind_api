@@ -341,6 +341,8 @@ class DBManager():
             data.pop('created_at', None) # reason: ensure that the created_at column is not updated
 
             conditions = [getattr(table_cls, pk) == data[pk] for pk in pk_columns]
+            conditions.append(getattr(table_cls, 'created_by') != 'system')
+            
             statement = update(table_cls).where(*conditions).values(data).returning(table_cls)
 
             returnings = self.session.execute(statement)

@@ -109,12 +109,9 @@ async def crud_select(input: CRUDSelectInput, id_user: str = Depends(validate_se
     statement = query.statement if not callable(query.statement)\
                                 else query.statement(**input.lambda_kwargs if input.lambda_kwargs else {}) 
     messages = SuccessMessages(
-        client=f"{input.table_name.capitalize()[:-1]} retrieved." if table_cls else f"{query.name.capitalize()} retrieved."
+        client=f"{input.table_name.split('_')[1].capitalize()} retrieved." if table_cls else f"{query.name.capitalize()} retrieved."
         , logger=f"Querying <{input.table_name}> was succesful! Filters: {input.filters}"
     )
-
-    if isinstance(input.filters.and_, dict):
-        input.filters.or_['created_by'] = [id_user, 'system']
 
     @api_output
     @db.catching(messages=messages)

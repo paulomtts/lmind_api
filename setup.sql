@@ -28,9 +28,9 @@ CREATE TABLE tsys_sessions (
 );
 
 CREATE TABLE tsys_symbols (
-     id serial primary key
-     , short varchar(5) not null
-     , long varchar(20) not null
-     , base integer not null
-     , type varchar(50) not null -- mass, volume, length, time, datetime, etc
+    id serial primary key
+    , short varchar(5) not null
+    , long varchar(20) not null
+    , base integer not null
+    , type varchar(50) not null -- mass, volume, length, time, datetime, etc
 );

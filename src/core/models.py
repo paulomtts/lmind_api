@@ -50,11 +50,12 @@ class TSysSessions(TimestampModel, table=True):
     user_agent: str = Field(regex=REGEX_SHA256)
     client_ip: str = Field(regex=REGEX_IP)
 
-class TSysSymbols(TimestampModel, UserstampModel, table=True):
+class TSysSymbols(SQLModel, table=True):
     __tablename__ = 'tsys_symbols'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    short: str = Field(regex=REGEX_WORDS)
-    long: str = Field(regex=REGEX_WORDS)
+    name: str = Field(regex=REGEX_WORDS)
+    abbreviation: str = Field(regex=REGEX_WORDS)
     base: int = Field(default=1)
     type: str = Field(regex=REGEX_WORDS)
+    created_by: str = Field(regex=REGEX_WORDS)

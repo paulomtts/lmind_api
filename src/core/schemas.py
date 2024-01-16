@@ -5,15 +5,15 @@ import pandas as pd
 import json
 
 class TableNames(BaseModel):
-    table_name: Literal['units'] \
-              | Literal['categories'] \
+    table_name: Literal['tsys_symbols'] \
+              | Literal['tsys_categories'] \
 
     @validator('table_name')
     def validate_table_name(cls, value):
         try:
             if value not in [
-            'units'
-            , 'categories'
+            'tsys_symbols'
+            , 'tsys_categories'
         ]:
                 raise ValueError(f"Invalid table name.")
         except ValueError as e:
