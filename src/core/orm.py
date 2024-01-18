@@ -313,7 +313,7 @@ class DBManager():
 
         if single:
             return self._single(table_cls, df)
-
+        
         return df
 
 
