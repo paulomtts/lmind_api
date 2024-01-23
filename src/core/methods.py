@@ -31,7 +31,7 @@ def api_output(func):
 
 
 # CRUD
-def append_user_credentials(data: Union[List[dict], dict, pd.DataFrame], user_id: str) -> list[dict]:
+def append_user_credentials(data: Union[List[dict], dict, pd.DataFrame], id_user: str) -> list[dict]:
     """
     Appends the user ID to the data.
     """
@@ -39,23 +39,23 @@ def append_user_credentials(data: Union[List[dict], dict, pd.DataFrame], user_id
     if isinstance(data, list) and all(isinstance(row, dict) for row in data):
         for row in data:
             if not row.get('created_by'):
-                row['created_by'] = user_id
+                row['created_by'] = id_user
 
-            row['updated_by'] = user_id
+            row['updated_by'] = id_user
 
     elif isinstance(data, dict):
         if not data.get('created_by'):
-            data['created_by'] = user_id
+            data['created_by'] = id_user
 
-        data['updated_by'] = user_id
+        data['updated_by'] = id_user
 
     elif isinstance(data, pd.DataFrame):
         if 'created_by' in data.columns:
-            data['created_by'].fillna(user_id, inplace=True)
+            data['created_by'].fillna(id_user, inplace=True)
         else:
-            data['created_by'] = user_id
+            data['created_by'] = id_user
 
-        data['updated_by'] = user_id
+        data['updated_by'] = id_user
 
     return data
 

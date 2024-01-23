@@ -12,7 +12,7 @@ sys.path.append(parent_dir)
 
 from src.core.crud import crud_router     # reason: uncomment when developing or testing locally
 from src.core.auth import auth_router
-from src.custom.routes.configs import customConfigs_router
+from src.custom.tsys import customConfigs_router
 
 app = FastAPI()
 app.add_middleware( # necessary to allow requests from local services

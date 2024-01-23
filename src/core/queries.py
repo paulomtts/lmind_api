@@ -11,4 +11,4 @@ from src.core.models import TSysSymbols
 # to allow for state comparisons. One for when no Recipe is selected, another for when a recipe has been clicked,
 # and the last to compare updates to the recipe ingredients.
 
-# inser queries here
+# insert queries here

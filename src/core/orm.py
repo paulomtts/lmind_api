@@ -413,7 +413,9 @@ class DBManager():
 
             if data.get('created_at') == '': # reason: see comment in TimestampModel in models.py
                 data.pop('created_at')
-            data['updated_at'] = datetime.utcnow()
+            
+            if 'updated_at' in data.keys():
+                data['updated_at'] = datetime.utcnow()
 
             inspector = inspect(table_cls)
             pk_columns = [column.name for column in inspector.primary_key] 
