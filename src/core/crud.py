@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 
-from src.core.models import TSysSymbols
 from src.core.schemas import DBOutput, APIOutput, CRUDSelectInput, CRUDDeleteInput, CRUDInsertInput, CRUDUpdateInput, SuccessMessages
 from src.core.methods import api_output, append_user_credentials
 from src.core.auth import validate_session
 from src.core.start import db
-from src.core.queries import *
+from src.core.models import *
+from src.custom.queries import *
 
 
 from collections import namedtuple
@@ -15,11 +15,13 @@ crud_router = APIRouter()
 
 
 TABLE_MAP = {
-    'tsys_symbols': TSysSymbols
+    'tsys_categories': TSysCategories
 }
 
 ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])
-QUERY_MAP = {}
+QUERY_MAP = {
+    'tsys_units': ComplexQuery(tsys_units_query, 'Units')
+}
 
 
 @crud_router.post("/crud/insert")
@@ -104,8 +106,8 @@ async def crud_select(input: CRUDSelectInput, id_user: str = Depends(validate_se
     input.lambda_kwargs['id_user'] = id_user
 
     table_cls = TABLE_MAP.get(input.table_name)
-
     query = QUERY_MAP.get(input.table_name, ComplexQuery(None, None))
+
     statement = query.statement if not callable(query.statement)\
                                 else query.statement(**input.lambda_kwargs if input.lambda_kwargs else {}) 
     messages = SuccessMessages(
@@ -154,8 +156,8 @@ async def crud_update(input: CRUDUpdateInput, id_user: str = Depends(validate_se
     return crud__update(table_cls, input.data)
 
 
-@crud_router.delete("/crud/delete")
-async def crud_delete(input: CRUDDeleteInput, id_user: str = Depends(validate_session)) -> APIOutput:
+@crud_router.delete("/crud/delete", dependencies=[Depends(validate_session)])
+async def crud_delete(input: CRUDDeleteInput) -> APIOutput:
     """
     Delete records from a specified table based on the provided filters. Filters example:
     <pre>
@@ -183,8 +185,7 @@ async def crud_delete(input: CRUDDeleteInput, id_user: str = Depends(validate_se
         , logger=f"Delete in {input.table_name.capitalize()} was successful. Filters: {input.filters}"
     )
 
-    if isinstance(input.filters.and_, dict):
-        input.filters.and_['created_by'] = [id_user]
+    input.filters.not_like_['created_by'] = ['system'] # reason: system created data should not be deleted
 
     @api_output
     @db.catching(messages=messages)

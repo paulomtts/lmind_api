@@ -376,11 +376,7 @@ class DBManager():
             for values in dct.values():
                 if 'system' in values:
                     raise ValueError("Cannot delete system records.")
-        
-        preliminary_query = self.query(table_cls, filters=filters)
-        if 'system' in preliminary_query['created_by'].values:
-            raise SystemDataError("Cannot delete system records.")
-                
+                        
         not_system_conditions = [getattr(table_cls, 'created_by') != 'system']
 
         statement = delete(table_cls).where(and_(*conditions, *not_system_conditions)).returning(table_cls)

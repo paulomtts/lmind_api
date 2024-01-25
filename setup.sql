@@ -27,10 +27,17 @@ CREATE TABLE tsys_sessions (
     , updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE tsys_symbols (
+CREATE TABLE tsys_units (
     id serial primary key
-    , short varchar(5) not null
-    , long varchar(20) not null
-    , base integer not null
+    , name varchar(20) not null
+    , abbreviation varchar(5) not null
+    , type varchar(50) not null -- mass, volume, length, time, datetime, etc
+    , created_by VARCHAR(64) NOT NULL
+);
+
+CREATE TABLE tsys_categories (
+    id serial primary key
+    , name varchar(50) not null
+    , description varchar(255) not null
     , type varchar(50) not null -- mass, volume, length, time, datetime, etc
 );

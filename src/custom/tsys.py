@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
+from src.core.start import db
 from src.core.auth import validate_session
 from src.core.methods import api_output, append_user_credentials
-from src.core.models import TSysUsers, TSysSymbols
+from src.core.models import TSysUsers, TSysUnits
 from src.core.schemas import DBOutput, SuccessMessages, WhereConditions
-from src.custom.schemas import TSysSymbolsUpsert
-from src.core.start import db
+from src.custom.schemas import TSysUnitsInsert, TSysUnitsDelete
+from src.custom.queries import tsys_units_query
 
 from collections import namedtuple
 
@@ -39,35 +40,45 @@ async def get_user(id_user: str = Depends(validate_session)):
     return get_user(id_user)
 
 
-@customConfigs_router.post("/tsys/symbols/upsert")
-async def upsert_symbols(input: TSysSymbolsUpsert, id_user: str = Depends(validate_session)):
+@customConfigs_router.post("/tsys/units/insert")
+async def upsert_symbols(input: TSysUnitsInsert, id_user: str = Depends(validate_session)):
     """
-    Insert or update symbols and return the entire table.
+    Insert symbols and return the entire table.
     """
 
     data = input.dict()
-
     data['created_by'] = id_user
-    if not data['id']:
-        data.pop('id', None)
 
+    id = data.pop('id')
+    if id:
+        raise HTTPException(status_code=400, detail="Cannot provide an id during insertion. Were you trying to update?")
+        
     @api_output
-    @db.catching(messages=SuccessMessages('Symbols upserted!'))
+    @db.catching(messages=SuccessMessages('Unit created!'))
     def upsert_symbols(data: dict) -> DBOutput:
 
-        db.upsert(TSysSymbols, [data], single=True)
+        db.insert(TSysUnits, [data], single=True)
         db.session.commit()
 
-        symbols = db.query(TSysSymbols)
-        users = db.query(TSysUsers)
-
-        users = users[['name', 'google_id']]
-        users = users.rename(columns={'name': 'user_name'})
-
-        symbols = symbols.merge(users, how='left', left_on='created_by', right_on='google_id')
-        symbols['created_by'] = symbols.apply(lambda row: row['created_by'] if row['created_by'] == 'system' else row['user_name'], axis=1)
-        symbols = symbols.drop(columns=['user_name', 'google_id'])
-
-        return symbols
+        return db.query(None, statement=tsys_units_query)
 
     return upsert_symbols(data)
+
+@customConfigs_router.delete("/tsys/units/delete", dependencies=[Depends(validate_session)])
+async def delete_symbols(input: TSysUnitsDelete):
+    """
+    Delete symbols and return the entire table.
+    """
+
+    filters = WhereConditions(and_={'id': [input.id]})
+
+    @api_output
+    @db.catching(messages=SuccessMessages('Unit deleted!'))
+    def delete_symbols(filters: WhereConditions) -> DBOutput:
+
+        db.delete(TSysUnits, filters=filters)
+        db.session.commit()
+
+        return db.query(None, statement=tsys_units_query)
+
+    return delete_symbols(filters)

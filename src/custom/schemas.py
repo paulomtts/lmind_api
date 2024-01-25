@@ -1,12 +1,16 @@
-from src.core.schemas import DeleteFilters
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
-class TSysSymbolsUpsert(BaseModel):
-    id: Optional[str] = None
+class TSysUnitsInsert(BaseModel):
+    id: Optional[str] = None # reason: frontend sends an empty string
     name: str
     abbreviation: str
-    base: int
-    type: Literal['length', 'mass', 'volume', 'time', 'ammount', 'paulo']
+    type: Literal['length', 'mass', 'volume', 'time', 'amount']
+    created_by: Optional[str] = None
+
+class TSysUnitsDelete(BaseModel):
+    id: int = Field(..., gt=0)
+    name: str
+    abbreviation: str
+    type: Literal['length', 'mass', 'volume', 'time', 'amount']
     created_by: Optional[str] = None

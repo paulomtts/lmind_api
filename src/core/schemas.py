@@ -4,22 +4,15 @@ from typing import List, Any, Optional, Literal
 import pandas as pd
 import json
 
-class TableNames(BaseModel):
-    table_name: Literal['tsys_symbols'] \
-              | Literal['tsys_categories'] \
 
-    @validator('table_name')
-    def validate_table_name(cls, value):
-        try:
-            if value not in [
-            'tsys_symbols'
-            , 'tsys_categories'
-        ]:
-                raise ValueError(f"Invalid table name.")
-        except ValueError as e:
-            print(e)
-            
-        return value
+# custom exception
+class ForbiddenOperationError(Exception):
+    pass
+
+
+class TableNames(BaseModel):
+    table_name: Literal['tsys_units', 'tsys_categories']
+
     
 class WhereConditions(BaseModel):
     or_: Optional[dict[str, List[str | int]]] = {}
@@ -33,10 +26,6 @@ class WhereConditions(BaseModel):
         yield self.like_
         yield self.not_like_
 
-class DeleteFilters(BaseModel):
-    field: str
-    values: List[str | int]
-
 class SuccessMessages(BaseModel):
     client: Optional[str] = 'Operation was successful.'
     logger: Optional[str] = None
@@ -48,6 +37,12 @@ class SuccessMessages(BaseModel):
 class CRUDInsertInput(TableNames, BaseModel):
     data: list
 
+    @validator('table_name')
+    def table_name_validator(cls, val):
+        if val in ['tsys_categories']:
+            raise ForbiddenOperationError(f'INSERT is not allowed on table <{val}>.')
+        return val
+
 class CRUDSelectInput(TableNames, BaseModel):
     filters: Optional[WhereConditions] = WhereConditions()
     lambda_kwargs: Optional[dict[str, Any]] = {}
@@ -55,8 +50,20 @@ class CRUDSelectInput(TableNames, BaseModel):
 class CRUDUpdateInput(TableNames, BaseModel):
     data: dict
 
+    @validator('table_name')
+    def table_name_validator(cls, val):
+        if val in ['tsys_categories']:
+            raise ForbiddenOperationError(f'UPDATE is not allowed on table <{val}>.')
+        return val
+
 class CRUDDeleteInput(TableNames, BaseModel):
     filters: Optional[WhereConditions]
+
+    @validator('table_name')
+    def table_name_validator(cls, val):
+        if val in ['tsys_categories']:
+            raise ForbiddenOperationError(f'DELETE is not allowed on table <{val}>.')
+        return val
 
 
 class DBOutput(BaseModel):
