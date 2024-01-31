@@ -16,6 +16,9 @@ crud_router = APIRouter()
 
 TABLE_MAP = {
     'tsys_categories': TSysCategories
+    , 'tsys_tags': TSysTags
+    
+    , 'tprod_tasks': TProdTasks
 }
 
 ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])

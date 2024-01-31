@@ -5,15 +5,11 @@ import pandas as pd
 import json
 
 
-# custom exception
 class ForbiddenOperationError(Exception):
     pass
 
 
-class TableNames(BaseModel):
-    table_name: Literal['tsys_units', 'tsys_categories']
 
-    
 class WhereConditions(BaseModel):
     or_: Optional[dict[str, List[str | int]]] = {}
     and_: Optional[dict[str, List[str | int]]] = {}
@@ -34,7 +30,11 @@ class SuccessMessages(BaseModel):
         super().__init__(client=client, logger=logger)
 
 
-class CRUDInsertInput(TableNames, BaseModel):
+class TableNames(BaseModel):
+    table_name: Literal['tsys_units', 'tsys_categories', 'tsys_tags', 'tprod_resources', 'tprod_skills', 'tprod_tasks']
+
+
+class CRUDInsertInput(TableNames):
     data: list
 
     @validator('table_name')
@@ -43,11 +43,11 @@ class CRUDInsertInput(TableNames, BaseModel):
             raise ForbiddenOperationError(f'INSERT is not allowed on table <{val}>.')
         return val
 
-class CRUDSelectInput(TableNames, BaseModel):
+class CRUDSelectInput(TableNames):
     filters: Optional[WhereConditions] = WhereConditions()
     lambda_kwargs: Optional[dict[str, Any]] = {}
 
-class CRUDUpdateInput(TableNames, BaseModel):
+class CRUDUpdateInput(TableNames):
     data: dict
 
     @validator('table_name')
@@ -56,7 +56,7 @@ class CRUDUpdateInput(TableNames, BaseModel):
             raise ForbiddenOperationError(f'UPDATE is not allowed on table <{val}>.')
         return val
 
-class CRUDDeleteInput(TableNames, BaseModel):
+class CRUDDeleteInput(TableNames):
     filters: Optional[WhereConditions]
 
     @validator('table_name')

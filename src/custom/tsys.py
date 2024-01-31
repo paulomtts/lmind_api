@@ -4,9 +4,9 @@ from fastapi.responses import JSONResponse
 from src.core.start import db
 from src.core.auth import validate_session
 from src.core.methods import api_output, append_user_credentials
-from src.core.models import TSysUsers, TSysUnits
+from src.core.models import TSysUsers, TSysUnits, TSysTags
 from src.core.schemas import DBOutput, SuccessMessages, WhereConditions
-from src.custom.schemas import TSysUnitsInsert, TSysUnitsDelete
+from src.custom.schemas import TSysUnitsInsert, TSysUnitsDelete, TSysProductTagInsert
 from src.custom.queries import tsys_units_query
 
 from collections import namedtuple
@@ -40,6 +40,7 @@ async def get_user(id_user: str = Depends(validate_session)):
     return get_user(id_user)
 
 
+# tsys_units
 @customConfigs_router.post("/tsys/units/insert")
 async def upsert_symbols(input: TSysUnitsInsert, id_user: str = Depends(validate_session)):
     """
@@ -48,10 +49,6 @@ async def upsert_symbols(input: TSysUnitsInsert, id_user: str = Depends(validate
 
     data = input.dict()
     data['created_by'] = id_user
-
-    id = data.pop('id')
-    if id:
-        raise HTTPException(status_code=400, detail="Cannot provide an id during insertion. Were you trying to update?")
         
     @api_output
     @db.catching(messages=SuccessMessages('Unit created!'))
@@ -82,3 +79,30 @@ async def delete_symbols(input: TSysUnitsDelete):
         return db.query(None, statement=tsys_units_query)
 
     return delete_symbols(filters)
+
+
+# tsys_tags
+# @customConfigs_router.post("/tsys/tags/insert")
+# async def upsert_tags(input: TSysProductTagInsert, id_user: str = Depends(validate_session)):
+#     """
+#     Insert tags and return the entire table.
+#     """
+
+#     data = input.dict()
+#     data['created_by'] = id_user
+#     data['type'] = 'product'
+
+#     id = data.pop('id')
+#     if id:
+#         raise HTTPException(status_code=400, detail="Cannot provide an id during insertion. Were you trying to update?")
+        
+#     @api_output
+#     @db.catching(messages=SuccessMessages('Tag created!'))
+#     def upsert_tags(data: dict) -> DBOutput:
+
+#         db.insert(TSysTags, [data], single=True)
+#         db.session.commit()
+
+#         return db.query(None, statement=tsys_tags_query)
+
+#     return upsert_tags(data)

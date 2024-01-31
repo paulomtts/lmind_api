@@ -66,3 +66,59 @@ class TSysCategories(SQLModel, table=True):
     name: str = Field(regex=REGEX_WORDS)
     description: str = Field(regex=REGEX_WORDS)
     type: str = Field(regex=REGEX_WORDS)
+    
+class TSysTags(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tsys_tags'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    code_a: Optional[str] = Field(default=None, regex=REGEX_WORDS)
+    counter_a: Optional[int] = Field(default=None)
+    code_b: Optional[str] = Field(default=None, regex=REGEX_WORDS)
+    counter_b: Optional[int] = Field(default=None)
+    code_c: Optional[str] = Field(default=None, regex=REGEX_WORDS)
+    counter_c: Optional[int] = Field(default=None)
+    code_d: Optional[str] = Field(default=None, regex=REGEX_WORDS)
+    counter_d: Optional[int] = Field(default=None)
+    code_e: Optional[str] = Field(default=None, regex=REGEX_WORDS)
+    counter_e: Optional[int] = Field(default=None)
+    type: str = Field(regex=REGEX_WORDS)
+    agg: str = Field(regex=REGEX_WORDS)
+
+
+# TPROD   
+class TProdResources(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tprod_resources'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(regex=REGEX_WORDS)
+
+class TProdSkills(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tprod_skills'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(regex=REGEX_WORDS)
+    description: str = Field(regex=REGEX_WORDS)
+
+class TProdTasks(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tprod_tasks'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(regex=REGEX_WORDS)
+    description: str = Field(regex=REGEX_WORDS)
+    duration: float = Field(default=0.0)
+    id_unit: int = Field(foreign_key='tsys_units.id')
+    interruptible: bool = Field(default=False)
+    error_margin: float = Field(default=0.0)
+
+class TProdTaskSkills(SQLModel, table=True):
+    __tablename__ = 'tprod_taskskills'
+
+    id_task: int = Field(foreign_key='tprod_tasks.id', primary_key=True)
+    id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
+
+class TProdResourceSkills(SQLModel, table=True):
+    __tablename__ = 'tprod_resourceskills'
+
+    id_resource: int = Field(foreign_key='tprod_resources.id', primary_key=True)
+    id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
+
