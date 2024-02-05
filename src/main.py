@@ -10,9 +10,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from src.core.crud import crud_router     # reason: uncomment when developing or testing locally
-from src.core.auth import auth_router
-from src.custom.tsys import customConfigs_router
+from src.crud import crud_router     # reason: uncomment when developing or testing locally
+from src.auth import auth_router
+from src.routes.tsys import tsys_router
+from src.routes.tprod import tprod_router
 
 app = FastAPI()
 app.add_middleware( # necessary to allow requests from local services
@@ -25,7 +26,8 @@ app.add_middleware( # necessary to allow requests from local services
 
 app.include_router(crud_router)    # reason: uncomment when developing or testing locally
 app.include_router(auth_router)
-app.include_router(customConfigs_router)
+app.include_router(tsys_router)
+app.include_router(tprod_router)
 
 
 @app.get('/health')

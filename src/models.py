@@ -4,7 +4,7 @@ from typing import Optional
 
 REGEX_SHA256 = r'^[a-fA-F0-9]{64}$'
 REGEX_NUMBERS = r'^[0-9]+$'
-REGEX_WORDS = r'^[a-zA-Z\s]+$'
+REGEX_WORDS = r"^[a-zA-Z\s]+$"
 REGEX_IP = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
 URL_REGEX = r'^https:\/\/[^\s\/$.?#].[^\s]*$'
 EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -37,7 +37,7 @@ class TSysUsers(TimestampModel, table=True):
     google_id: Optional[str] = Field(default=None, regex=REGEX_NUMBERS)
     google_email: str = Field(regex=EMAIL_REGEX)
     google_picture_url: str = Field(regex=URL_REGEX)
-    google_access_token: str
+    google_access_token: str = Field(...)
     name: str = Field(regex=REGEX_WORDS)
     locale: str = Field(regex=REGEX_WORDS)
 

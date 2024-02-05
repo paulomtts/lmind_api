@@ -31,7 +31,14 @@ class SuccessMessages(BaseModel):
 
 
 class TableNames(BaseModel):
-    table_name: Literal['tsys_units', 'tsys_categories', 'tsys_tags', 'tprod_resources', 'tprod_skills', 'tprod_tasks']
+    table_name: Literal[
+        'tsys_units'
+        , 'tsys_categories'
+        , 'tsys_tags'
+        , 'tprod_resources'
+        , 'tprod_skills'
+        , 'tprod_tasks'
+    ]
 
 
 class CRUDInsertInput(TableNames):
@@ -46,6 +53,7 @@ class CRUDInsertInput(TableNames):
 class CRUDSelectInput(TableNames):
     filters: Optional[WhereConditions] = WhereConditions()
     lambda_kwargs: Optional[dict[str, Any]] = {}
+    simple: bool = False
 
 class CRUDUpdateInput(TableNames):
     data: dict

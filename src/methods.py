@@ -2,13 +2,14 @@ from fastapi.responses import JSONResponse
 from fastapi import Response
 from sqlalchemy.orm.exc import StaleDataError
 
-from src.core.schemas import APIOutput, WhereConditions
-from src.core.start import db
+from src.schemas import APIOutput, WhereConditions
+from src.start import db
 
 from typing import List, Union
 from functools import wraps
 
 import pandas as pd
+import datetime
 
 
 # Decorators
@@ -31,31 +32,65 @@ def api_output(func):
 
 
 # CRUD
-def append_user_credentials(data: Union[List[dict], dict, pd.DataFrame], id_user: str) -> list[dict]:
+def append_userstamps(data: Union[List[dict], dict, pd.DataFrame], id_user: str) -> list[dict]:
     """
     Appends the user ID to the data.
     """
 
     if isinstance(data, list) and all(isinstance(row, dict) for row in data):
         for row in data:
-            if not row.get('created_by'):
+            if 'created_by' in row.keys() and not row.get('created_by'):
                 row['created_by'] = id_user
 
-            row['updated_by'] = id_user
+            if 'updated_by' in row.keys():
+                row['updated_by'] = id_user
 
     elif isinstance(data, dict):
-        if not data.get('created_by'):
+        if 'created_by' in data.keys() and not data.get('created_by'):
             data['created_by'] = id_user
 
-        data['updated_by'] = id_user
+        if 'updated_by' in data.keys():
+            data['updated_by'] = id_user
 
     elif isinstance(data, pd.DataFrame):
         if 'created_by' in data.columns:
             data['created_by'].fillna(id_user, inplace=True)
-        else:
-            data['created_by'] = id_user
 
-        data['updated_by'] = id_user
+        if 'updated_by' in data.columns:
+            data['updated_by'] = id_user
+    else:
+        raise TypeError(f"Could not append user credentials. Current data type {type(data)} is not supported.")
+
+    return data
+
+def append_timestamps(data: Union[List[dict], dict, pd.DataFrame]) -> list[dict]:
+    """
+    Appends the current timestamp to the data.
+    """
+
+    if isinstance(data, list) and all(isinstance(row, dict) for row in data):
+        for row in data:
+            if 'created_at' in row.keys() and not row.get('created_at'):
+                row['created_at'] = datetime.datetime.utcnow()
+
+            if 'updated_at' in row.keys():
+                row['updated_at'] = datetime.datetime.utcnow()
+
+    elif isinstance(data, dict):
+        if 'created_at' in data.keys() and not data.get('created_at'):
+            data['created_at'] = datetime.datetime.utcnow()
+
+        if 'updated_at' in data.keys():
+            data['updated_at'] = datetime.datetime.utcnow()
+
+    elif isinstance(data, pd.DataFrame):
+        if 'created_at' in data.columns:
+            data['created_at'].fillna(datetime.datetime.utcnow(), inplace=True)
+
+        if 'updated_at' in data.columns:
+            data['updated_at'] = datetime.datetime.utcnow()
+    else:
+        raise TypeError(f"Could not append timestamps. Current data type {type(data)} is not supported.")
 
     return data
 

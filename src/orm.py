@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError, InternalError, OperationalError, Prog
 from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.sql.selectable import Select
 
-from src.core.schemas import DBOutput, WhereConditions, SuccessMessages
+from src.schemas import DBOutput, WhereConditions, SuccessMessages
 
 from collections import namedtuple
 from datetime import datetime
@@ -407,11 +407,11 @@ class DBManager():
         results = []
         for data in data_list:
 
-            if data.get('created_at') == '': # reason: see comment in TimestampModel in models.py
-                data.pop('created_at')
-            
-            if 'updated_at' in data.keys():
-                data['updated_at'] = datetime.utcnow()
+            # if getattr(table_cls, 'created_at') and not data.get('created_at'):
+            #     data['created_at'] = datetime.utcnow()
+
+            # if getattr(table_cls, 'updated_at'):
+            #     data['updated_at'] = datetime.utcnow()
 
             inspector = inspect(table_cls)
             pk_columns = [column.name for column in inspector.primary_key] 

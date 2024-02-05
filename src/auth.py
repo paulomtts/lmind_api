@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException, Request, Response, Cookie, Query, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 
-from src.core.start import db
-from src.core.models import TSysRoles, TSysUsers, TSysSessions
-from src.core.schemas import SuccessMessages, DBOutput, WhereConditions
-from src.core.security import generate_session_token, hash_plaintext, generate_jwt, decode_jwt
+from src.start import db
+from src.models import TSysRoles, TSysUsers, TSysSessions
+from src.schemas import SuccessMessages, DBOutput, WhereConditions
+from src.security import generate_session_token, hash_plaintext, generate_jwt, decode_jwt
 
 from typing import Annotated
 
+import datetime
 import requests
 import base64
 import json
@@ -166,6 +167,7 @@ async def auth_callback(request: Request, code: str = Query(...)):
 
                 if user:
                     user_data['id_role'] = user.id
+                    user_data['updated_at'] = datetime.datetime.utcnow()
                     google_user = db.upsert(TSysUsers, [user_data], single=True)
 
                     if google_user:

@@ -1,4 +1,4 @@
-from src.core.orm import DBManager
+from src.orm import DBManager
 
 import logging.config
 import dotenv
