@@ -2,6 +2,7 @@ from sqlmodel import Field, SQLModel
 from datetime import datetime
 from typing import Optional
 
+
 REGEX_SHA256 = r'^[a-fA-F0-9]{64}$'
 REGEX_NUMBERS = r'^[0-9]+$'
 REGEX_WORDS = r"^[a-zA-Z\s]+$"
@@ -122,3 +123,10 @@ class TProdResourceSkills(SQLModel, table=True):
     id_resource: int = Field(foreign_key='tprod_resources.id', primary_key=True)
     id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
 
+
+
+TABLE_MAP = {
+    'tsys_categories': TSysCategories
+    , 'tsys_tags': TSysTags
+    , 'tprod_resourceskills': TProdResourceSkills
+}

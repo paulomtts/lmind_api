@@ -93,17 +93,16 @@ class TProdResourceDelete(BaseModel):
 class TProdTaskUpsert(BaseModel):
     id: Optional[int] = None
     name: str
-    description: Optional[str] = None
-    duration: Optional[float] = None
-    id_unit: Optional[int] = None
-    interruptible: Optional[bool] = None
-    error_margin: Optional[float] = None
+    description: str
+    duration: float
+    id_unit: int
+    interruptible: Optional[bool] = False
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_by: Optional[str] = None
     updated_at: Optional[str] = None
 
-    @validator('name', 'description', 'duration', 'id_unit', 'interruptible', 'error_margin')
+    @validator('name', 'description', 'duration', 'id_unit', 'interruptible')
     def name_must_not_be_empty(cls, value):
         if not value:
             raise HTTPException(

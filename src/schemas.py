@@ -38,6 +38,7 @@ class TableNames(BaseModel):
         , 'tprod_resources'
         , 'tprod_skills'
         , 'tprod_tasks'
+        , 'tprod_resourceskills'
     ]
 
 
@@ -53,7 +54,6 @@ class CRUDInsertInput(TableNames):
 class CRUDSelectInput(TableNames):
     filters: Optional[WhereConditions] = WhereConditions()
     lambda_kwargs: Optional[dict[str, Any]] = {}
-    simple: bool = False
 
 class CRUDUpdateInput(TableNames):
     data: dict

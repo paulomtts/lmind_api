@@ -1,8 +1,10 @@
 # This area is meant for complex queries made for multiple reasons: avoiding chained operations,
 # reducing backend ammount of work & other reasons. This is not a rule, but a suggestion.
+from collections import namedtuple
 
 from sqlmodel import select, func, literal, case
 from src.models import *
+
 
 # TSYS
 def tsys_units_query(type = None):
@@ -72,3 +74,12 @@ tprod_tasks_query = select(
 ).order_by(
     TProdTasks.name
 )
+
+
+ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])
+QUERY_MAP = {
+    'tsys_units': ComplexQuery(tsys_units_query, 'Units')
+    , 'tprod_skills': ComplexQuery(tprod_skills_query, 'Skills')
+    , 'tprod_resources': ComplexQuery(tprod_resources_query, 'Resources')
+    , 'tprod_tasks': ComplexQuery(tprod_tasks_query, 'Tasks')
+}

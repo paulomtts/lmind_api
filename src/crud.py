@@ -4,29 +4,11 @@ from src.schemas import DBOutput, APIOutput, CRUDSelectInput, CRUDDeleteInput, C
 from src.methods import api_output, append_userstamps, append_timestamps
 from src.auth import validate_session
 from src.start import db
-from src.models import *
-from src.queries import *
-
-
-from collections import namedtuple
+from src.models import TABLE_MAP
+from src.queries import QUERY_MAP, ComplexQuery
 
 
 crud_router = APIRouter()
-
-
-TABLE_MAP = {
-    'tsys_categories': TSysCategories
-    , 'tsys_tags': TSysTags
-    , 'tsys_units': TSysUnits
-}
-
-ComplexQuery = namedtuple('ComplexQuery', ['statement', 'name'])
-QUERY_MAP = {
-    'tsys_units': ComplexQuery(tsys_units_query, 'Units')
-    , 'tprod_skills': ComplexQuery(tprod_skills_query, 'Skills')
-    , 'tprod_resources': ComplexQuery(tprod_resources_query, 'Resources')
-    , 'tprod_tasks': ComplexQuery(tprod_tasks_query, 'Tasks')
-}
 
 
 @crud_router.post("/crud/insert")
@@ -110,13 +92,14 @@ async def crud_select(input: CRUDSelectInput) -> APIOutput:
     """
 
     table_cls = TABLE_MAP.get(input.table_name)
-    query = QUERY_MAP.get(input.table_name, ComplexQuery(None, None))
+    query = QUERY_MAP.get(input.table_name)
     
-    if input.simple:
-        query = ComplexQuery(None, None)
-
-    statement = query.statement if not callable(query.statement)\
-                                else query.statement(**input.lambda_kwargs if input.lambda_kwargs else {}) 
+    statement = None
+    if query:
+        if not callable(query.statement):
+            statement = query.statement
+        else:
+            statement = query.statement(**input.lambda_kwargs)
 
     messages = SuccessMessages(
         client=f"{input.table_name.split('_')[1].capitalize()} retrieved." if table_cls else f"{query.name.capitalize()} retrieved."
