@@ -65,6 +65,7 @@ tprod_tasks_query = select(
     , TProdTasks.name
     , TProdTasks.description
     , TProdTasks.duration
+    , TSysUnits.name.label('id_unit')
     , TSysUnits.name.label('unit')
     , TProdTasks.interruptible
     , TProdTasks.error_margin

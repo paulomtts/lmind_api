@@ -1,6 +1,7 @@
 from sqlmodel import Field, SQLModel
 from datetime import datetime
 from typing import Optional
+from collections import namedtuple
 
 
 REGEX_SHA256 = r'^[a-fA-F0-9]{64}$'
@@ -124,9 +125,9 @@ class TProdResourceSkills(SQLModel, table=True):
     id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
 
 
-
+SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])
 TABLE_MAP = {
-    'tsys_categories': TSysCategories
-    , 'tsys_tags': TSysTags
-    , 'tprod_resourceskills': TProdResourceSkills
+    'tsys_categories': SimpleQuery("Categories", TSysCategories)
+    , 'tsys_tags': SimpleQuery("Tags", TSysTags)
+    , 'tprod_resourceskills': SimpleQuery("Resource's skills", TProdResourceSkills)
 }

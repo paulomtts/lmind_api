@@ -4,8 +4,8 @@ from src.schemas import DBOutput, APIOutput, CRUDSelectInput, CRUDDeleteInput, C
 from src.methods import api_output, append_userstamps, append_timestamps
 from src.auth import validate_session
 from src.start import db
-from src.models import TABLE_MAP
-from src.queries import QUERY_MAP, ComplexQuery
+from src.models import TABLE_MAP, SimpleQuery
+from src.queries import QUERY_MAP
 
 
 crud_router = APIRouter()
@@ -91,18 +91,18 @@ async def crud_select(input: CRUDSelectInput) -> APIOutput:
         </ul>
     """
 
-    table_cls = TABLE_MAP.get(input.table_name)
-    query = QUERY_MAP.get(input.table_name)
+    simple_query = TABLE_MAP.get(input.table_name) or SimpleQuery(name=input.table_name, cls=None)
+    complex_query = QUERY_MAP.get(input.table_name)
     
     statement = None
-    if query:
-        if not callable(query.statement):
-            statement = query.statement
+    if complex_query:
+        if not callable(complex_query.statement):
+            statement = complex_query.statement
         else:
-            statement = query.statement(**input.lambda_kwargs)
+            statement = complex_query.statement(**input.lambda_kwargs)
 
     messages = SuccessMessages(
-        client=f"{input.table_name.split('_')[1].capitalize()} retrieved." if table_cls else f"{query.name.capitalize()} retrieved."
+        client=f"{simple_query.name} retrieved." if simple_query.cls else f"{complex_query.name} retrieved."
         , logger=f"Querying <{input.table_name}> was succesful! Filters: {input.filters}"
     )
 
@@ -111,7 +111,7 @@ async def crud_select(input: CRUDSelectInput) -> APIOutput:
     def crud__select(table_cls, statement, filters):
         return db.query(table_cls=table_cls, statement=statement, filters=filters)
 
-    return crud__select(table_cls, statement, input.filters)
+    return crud__select(simple_query.cls, statement, input.filters)
 
 
 @crud_router.put("/crud/update")
