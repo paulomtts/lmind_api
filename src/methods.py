@@ -1,5 +1,6 @@
-from fastapi.responses import JSONResponse
 from fastapi import Response
+from fastapi.responses import JSONResponse
+from sqlalchemy import inspect
 from sqlalchemy.orm.exc import StaleDataError
 
 from src.schemas import APIOutput, WhereConditions
@@ -7,6 +8,7 @@ from src.start import db
 
 from typing import List, Union
 from functools import wraps
+from collections import namedtuple
 
 import pandas as pd
 import datetime
@@ -32,36 +34,44 @@ def api_output(func):
 
 
 # CRUD
-def append_userstamps(data: Union[List[dict], dict, pd.DataFrame], id_user: str) -> list[dict]:
+def append_userstamps(table_cls, data: Union[List[dict], dict, pd.DataFrame], id_user: str) -> list[dict]:
     """
     Appends the user ID to the data.
     """
 
+    def set_stamps(row: Union[dict, pd.Series], mode: str):
+        table_columns = [col.name for col in table_cls.__table__.columns]
+
+
+        if mode == 'insert':
+            if 'created_by' in table_columns:
+                row['created_by'] = id_user
+            
+        if 'updated_by' in table_columns:
+            row['updated_by'] = id_user
+
+        if mode == 'update': 
+            row.pop('created_by', None)
+            row.pop('created_at', None)
+
+
+    inspector = inspect(table_cls)
+    pk_columns = [pk.name for pk in inspector.primary_key]
+    mode = 'update'
+
     if isinstance(data, list) and all(isinstance(row, dict) for row in data):
         for row in data:
-            if 'created_by' in row.keys() and not row.get('created_by'):
-                row['created_by'] = id_user
-
-            if 'updated_by' in row.keys():
-                row['updated_by'] = id_user
-
-    elif isinstance(data, dict):
-        if 'created_by' in data.keys() and not data.get('created_by'):
-            data['created_by'] = id_user
-
-        if 'updated_by' in data.keys():
-            data['updated_by'] = id_user
+            if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
+            set_stamps(row, mode)
 
     elif isinstance(data, pd.DataFrame):
-        if 'created_by' in data.columns:
-            data['created_by'].fillna(id_user, inplace=True)
+        for _, row in data.iterrows():
+            if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
+            set_stamps(row, mode)
 
-        if 'updated_by' in data.columns:
-            data['updated_by'] = id_user
-    else:
-        raise TypeError(f"Could not append user credentials. Current data type {type(data)} is not supported.")
-
-    return data
+    elif isinstance(data, dict):
+        if not any(data.get(pk) for pk in pk_columns): mode = 'insert'
+        set_stamps(data, mode)
 
 def append_timestamps(data: Union[List[dict], dict, pd.DataFrame]) -> list[dict]:
     """

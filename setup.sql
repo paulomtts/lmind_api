@@ -33,7 +33,7 @@ CREATE TABLE tsys_units (
     , name varchar(20) not null
     , abbreviation varchar(5) not null
     , type varchar(50) not null -- mass, volume, length, time, datetime, etc
-    , created_by VARCHAR(64) NOT NULL
+    , created_by VARCHAR(64)
 );
 
 CREATE TABLE tsys_categories (
@@ -64,9 +64,9 @@ CREATE TABLE tsys_tags (
 	    COALESCE(code_e, '') || COALESCE(CAST(counter_e AS VARCHAR), '') ||
 	    type
 	) stored
-	, created_by VARCHAR(64) NOT NULL
+	, created_by VARCHAR(64)
 	, created_at TIMESTAMP DEFAULT NOW()
-	, updated_by VARCHAR(64) NOT NULL
+	, updated_by VARCHAR(64)
 	, updated_at TIMESTAMP DEFAULT NOW()
 	, CONSTRAINT unique_aggregate_combination UNIQUE (agg)
 );
@@ -77,9 +77,9 @@ CREATE TABLE tsys_tags (
 CREATE TABLE tprod_resources (
     id SERIAL PRIMARY KEY
     , name VARCHAR(255) NOT NULL
-    , created_by VARCHAR(64) NOT NULL
+    , created_by VARCHAR(64)
     , created_at TIMESTAMP DEFAULT NOW()
-    , updated_by VARCHAR(64) NOT NULL
+    , updated_by VARCHAR(64)
     , updated_at TIMESTAMP DEFAULT NOW()
 )
 
@@ -87,9 +87,9 @@ CREATE TABLE tprod_skills (
     id SERIAL PRIMARY KEY
     , name VARCHAR(255) NOT NULL
     , description VARCHAR(255) NOT NULL
-    , created_by VARCHAR(64) NOT NULL
+    , created_by VARCHAR(64)
     , created_at TIMESTAMP DEFAULT NOW()
-    , updated_by VARCHAR(64) NOT NULL
+    , updated_by VARCHAR(64)
     , updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -101,9 +101,9 @@ CREATE TABLE tprod_tasks (
     , id_unit INTEGER REFERENCES tsys_units(id) NOT NULL
     , interruptible BOOLEAN DEFAULT FALSE
     , error_margin REAL DEFAULT 0.0
-    , created_by VARCHAR(64) NOT NULL
+    , created_by VARCHAR(64)
     , created_at TIMESTAMP DEFAULT NOW()
-    , updated_by VARCHAR(64) NOT NULL
+    , updated_by VARCHAR(64)
     , updated_at TIMESTAMP DEFAULT NOW()
 );
 

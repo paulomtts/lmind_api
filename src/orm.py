@@ -341,7 +341,7 @@ class DBManager():
             data.pop('created_at', None) # reason: ensure that the created_at column is not updated
 
             conditions = [getattr(table_cls, pk) == data[pk] for pk in pk_columns]
-            conditions.append(getattr(table_cls, 'created_by') != 'system')
+            conditions.append(getattr(table_cls, 'created_by', None) != 'system')
             
             statement = update(table_cls).where(*conditions).values(data).returning(table_cls)
 
@@ -377,7 +377,7 @@ class DBManager():
                 if 'system' in values:
                     raise ValueError("Cannot delete system records.")
                         
-        not_system_conditions = [getattr(table_cls, 'created_by') != 'system']
+        not_system_conditions = [getattr(table_cls, 'created_by', None) != 'system']
 
         statement = delete(table_cls).where(and_(*conditions, *not_system_conditions)).returning(table_cls)
 
@@ -390,7 +390,7 @@ class DBManager():
         return df
 
 
-    def upsert(self, table_cls, data_list: List[dict], single: bool = False):
+    def upsert(self, table_cls, data_list: List[dict], single: bool = False, id_user: str = None):
         """
         Attempts to insert data into the specified table, and updates the data if the insert fails because of a unique constraint violation.
 
@@ -407,12 +407,6 @@ class DBManager():
         results = []
         for data in data_list:
 
-            # if getattr(table_cls, 'created_at') and not data.get('created_at'):
-            #     data['created_at'] = datetime.utcnow()
-
-            # if getattr(table_cls, 'updated_at'):
-            #     data['updated_at'] = datetime.utcnow()
-
             inspector = inspect(table_cls)
             pk_columns = [column.name for column in inspector.primary_key] 
             pk_value_list = [getattr(table_cls, pk) for pk in pk_columns]
@@ -428,7 +422,7 @@ class DBManager():
 
         if single:
             return self._single(table_cls, df)
-        
+
         return df
 
 

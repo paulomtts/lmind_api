@@ -3,8 +3,11 @@
 from collections import namedtuple
 
 from sqlmodel import select, func, literal, case
+from sqlalchemy.orm import aliased
 from src.models import *
 
+created_by_user = aliased(TSysUsers)
+updated_by_user = aliased(TSysUsers)
 
 # TSYS
 def tsys_units_query(type = None):
@@ -35,13 +38,16 @@ tprod_skills_query = select(
     TProdSkills.id
     , TProdSkills.name
     , TProdSkills.description
-    , TSysUsers.name.label('created_by')
+    , created_by_user.name.label('created_by')
     , TProdSkills.created_at.label('created_at')
-    , TSysUsers.name.label('updated_by')
+    , updated_by_user.name.label('updated_by')
     , TProdSkills.updated_at.label('updated_at')
 ).outerjoin(
-    TSysUsers
-    , TProdSkills.created_by == TSysUsers.google_id
+    created_by_user,
+    TProdSkills.created_by == created_by_user.google_id
+).outerjoin(
+    updated_by_user,
+    TProdSkills.updated_by == updated_by_user.google_id
 ).order_by(
     TProdSkills.name
 )
@@ -49,13 +55,16 @@ tprod_skills_query = select(
 tprod_resources_query = select(
     TProdResources.id
     , TProdResources.name
-    , TSysUsers.name.label('created_by')
+    , created_by_user.name.label('created_by')
     , TProdResources.created_at.label('created_at')
-    , TSysUsers.name.label('updated_by')
+    , updated_by_user.name.label('updated_by')
     , TProdResources.updated_at.label('updated_at')
 ).outerjoin(
-    TSysUsers
-    , TProdResources.created_by == TSysUsers.google_id
+    created_by_user
+    , TProdResources.created_by == created_by_user.google_id
+).outerjoin(
+    updated_by_user
+    , TProdResources.updated_by == updated_by_user.google_id
 ).order_by(
     TProdResources.name
 )

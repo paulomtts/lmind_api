@@ -19,8 +19,8 @@ class TimestampModel(SQLModel):
     # see the post at https://github.com/sqlalchemy/sqlalchemy/discussions/5903#discussioncomment-327672
 
 class UserstampModel(SQLModel):
-    created_by: str = Field(regex=REGEX_NUMBERS)
-    updated_by: str = Field(regex=REGEX_NUMBERS)
+    created_by: Optional[str] = Field(regex=REGEX_NUMBERS)
+    updated_by: Optional[str] = Field(regex=REGEX_NUMBERS)
     
 
 # TSYS

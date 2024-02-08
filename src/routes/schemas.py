@@ -69,11 +69,11 @@ class TProdSkillDelete(BaseModel):
     id: int = Field(..., gt=0)
 
 
-class TProdResourceUpsert(BaseModel):
+
+
+class ResourceObject(BaseModel):
     id: Optional[int] = None
     name: str
-    created_by: Optional[str] = None
-    created_at: Optional[str] = None
     updated_by: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -85,6 +85,10 @@ class TProdResourceUpsert(BaseModel):
                 detail='Required fields must not be empty.',
             )
         return value
+
+class TProdResourceUpsert(BaseModel):
+    resource: ResourceObject
+    id_skill_list: list[int]
 
 class TProdResourceDelete(BaseModel):
     id: int = Field(..., gt=0)

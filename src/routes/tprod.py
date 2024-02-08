@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TProdSkills, TProdResources, TProdTasks
+from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
 from src.routes.schemas import *
 from src.queries import tprod_skills_query, tprod_resources_query, tprod_tasks_query
@@ -29,7 +29,7 @@ async def upsert_skills(input: TProdSkillUpsert, id_user: str = Depends(validate
     if not data.get('id'): data.pop('id')
 
     append_timestamps(data)
-    append_userstamps(data, id_user)
+    append_userstamps(TProdSkills, data, id_user)
         
     @api_output
     @db.catching(messages=SuccessMessages('Skill created!'))
@@ -69,22 +69,30 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
     Insert resources and return the entire table.
     """
 
-    data = input.dict()
-    if not data.get('id'): data.pop('id')
+    resource = input.resource.dict()
+    id_skill_list = input.id_skill_list
+    
+    if not resource.get('id'): resource.pop('id')
 
-    append_timestamps(data)
-    append_userstamps(data, id_user)
-        
+    append_timestamps(resource)
+    append_userstamps(TProdResources, resource, id_user)
+
     @api_output
     @db.catching(messages=SuccessMessages('Resource created!'))
-    def tprod__upsert_resources(data: dict) -> DBOutput:
+    def tprod__upsert_resources(resource: dict, id_skill_list: list[int]) -> DBOutput:
+        resource_returning = db.upsert(TProdResources, [resource], single=True)
+        db.session.commit()
 
-        db.upsert(TProdResources, [data], single=True)
+        id_resource = resource_returning.id
+
+        delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
+        db.delete(TProdResourceSkills, filters=delete_filters)
+        db.upsert(TProdResourceSkills, [{'id_resource': id_resource, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
 
         return db.query(None, statement=tprod_resources_query)
-
-    return tprod__upsert_resources(data)
+    
+    return tprod__upsert_resources(resource, id_skill_list)
 
 @tprod_router.delete("/tprod/resources/delete", dependencies=[Depends(validate_session)])
 async def delete_resources(input: TProdResourceDelete):
@@ -117,7 +125,7 @@ async def upsert_tasks(input: TProdTaskUpsert, id_user: str = Depends(validate_s
     if not data.get('id'): data.pop('id')
 
     append_timestamps(data)
-    append_userstamps(data, id_user)
+    append_userstamps(ResourceObject, data, id_user)
         
     @api_output
     @db.catching(messages=SuccessMessages('Task created!'))
