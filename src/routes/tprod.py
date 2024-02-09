@@ -72,7 +72,7 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
     resource = input.resource.dict()
     id_skill_list = input.id_skill_list
     
-    if not resource.get('id'): resource.pop('id')
+    if not resource.get('id'): resource.pop('id', None)
 
     append_timestamps(resource)
     append_userstamps(TProdResources, resource, id_user)
@@ -85,8 +85,10 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
 
         id_resource = resource_returning.id
 
-        delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
-        db.delete(TProdResourceSkills, filters=delete_filters)
+        if resource.get('id'):
+            delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
+            db.delete(TProdResourceSkills, filters=delete_filters)
+
         db.upsert(TProdResourceSkills, [{'id_resource': id_resource, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
 
