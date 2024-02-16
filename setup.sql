@@ -71,6 +71,13 @@ CREATE TABLE tsys_tags (
 	, CONSTRAINT unique_aggregate_combination UNIQUE (agg)
 );
 
+CREATE TABLE tsys_keywords (
+    id_object INTEGER
+    , type VARCHAR(15) NOT NULL
+    , keyword VARCHAR(30) NOT NULL
+    , CONSTRAINT unique_constraint UNIQUE (id_object, type, keyword)
+);
+
 
 
 -- TPROD

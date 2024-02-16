@@ -85,6 +85,13 @@ class TSysTags(TimestampModel, UserstampModel, table=True):
     counter_e: Optional[int] = Field(default=None)
     type: str = Field(regex=REGEX_WORDS)
     agg: str = Field(regex=REGEX_WORDS)
+    
+class TSysKeywords(SQLModel, table=True):
+    __tablename__ = 'tsys_keywords'
+
+    id_object: int = Field(primary_key=True)
+    type: str = Field(regex=REGEX_WORDS, primary_key=True)
+    keyword: str = Field(regex=REGEX_WORDS, primary_key=True)
 
 
 # TPROD   
@@ -129,5 +136,6 @@ SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])
 TABLE_MAP = {
     'tsys_categories': SimpleQuery("Categories", TSysCategories)
     , 'tsys_tags': SimpleQuery("Tags", TSysTags)
+    , 'tsys_keywords': SimpleQuery("Keywords", TSysKeywords)
     , 'tprod_resourceskills': SimpleQuery("Resource's skills", TProdResourceSkills)
 }

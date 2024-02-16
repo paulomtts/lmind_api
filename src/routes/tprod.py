@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills
+from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills, TSysKeywords
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
 from src.routes.schemas import *
 from src.queries import tprod_skills_query, tprod_resources_query, tprod_tasks_query
@@ -71,6 +71,7 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
 
     resource = input.resource.dict()
     id_skill_list = input.id_skill_list
+    keyword_list = input.keyword_list
     
     if not resource.get('id'): resource.pop('id', None)
 
@@ -79,22 +80,26 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
 
     @api_output
     @db.catching(messages=SuccessMessages('Resource created!'))
-    def tprod__upsert_resources(resource: dict, id_skill_list: list[int]) -> DBOutput:
+    def tprod__upsert_resources(resource: dict, id_skill_list: list[int], keyword_list: list[str]) -> DBOutput:
         resource_returning = db.upsert(TProdResources, [resource], single=True)
         db.session.commit()
 
         id_resource = resource_returning.id
 
-        if resource.get('id'):
-            delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
-            db.delete(TProdResourceSkills, filters=delete_filters)
+        if resource.get('id'): # reason: differs between an UPDATE or INSERT
+            skills_delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
+            db.delete(TProdResourceSkills, filters=skills_delete_filters)
 
+            keywords_delete_filters = WhereConditions(and_={'id_object': [resource['id']], 'type': ['resource']}, not_like={'keyword': keyword_list})
+            db.delete(TSysKeywords, filters=keywords_delete_filters)
+
+        db.upsert(TSysKeywords, [{'id_object': id_resource, 'type': 'resource', 'keyword': keyword} for keyword in keyword_list]) 
         db.upsert(TProdResourceSkills, [{'id_resource': id_resource, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
 
         return db.query(None, statement=tprod_resources_query)
     
-    return tprod__upsert_resources(resource, id_skill_list)
+    return tprod__upsert_resources(resource, id_skill_list, keyword_list)
 
 @tprod_router.delete("/tprod/resources/delete", dependencies=[Depends(validate_session)])
 async def delete_resources(input: TProdResourceDelete):
@@ -108,6 +113,8 @@ async def delete_resources(input: TProdResourceDelete):
     @db.catching(messages=SuccessMessages('Resource deleted!'))
     def tprod__delete_resources(filters: WhereConditions) -> DBOutput:
 
+        db.delete(TProdResourceSkills, filters=WhereConditions(and_={'id_resource': [input.id]}))
+        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'type': ['resource']}))
         db.delete(TProdResources, filters=filters)
         db.session.commit()
 
@@ -127,7 +134,7 @@ async def upsert_tasks(input: TProdTaskUpsert, id_user: str = Depends(validate_s
     if not data.get('id'): data.pop('id')
 
     append_timestamps(data)
-    append_userstamps(ResourceObject, data, id_user)
+    append_userstamps(TProdResources, data, id_user)
         
     @api_output
     @db.catching(messages=SuccessMessages('Task created!'))

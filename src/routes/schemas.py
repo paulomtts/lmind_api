@@ -39,7 +39,6 @@ class TSysUnitInsert(TSysUnitsBase):
 class TSysUnitDelete(TSysUnitsBase):
     id: int = Field(..., gt=0)
 
-
 class TSysProductTagInsert(BaseModel): # THIS IS AN EXAMPLE
     code_a: Optional[str] = None
     counter_a: Optional[int] = None
@@ -69,8 +68,6 @@ class TProdSkillDelete(BaseModel):
     id: int = Field(..., gt=0)
 
 
-
-
 class ResourceObject(BaseModel):
     id: Optional[int] = None
     name: str
@@ -88,7 +85,8 @@ class ResourceObject(BaseModel):
 
 class TProdResourceUpsert(BaseModel):
     resource: ResourceObject
-    id_skill_list: list[int]
+    id_skill_list: set[int]
+    keyword_list: set[str]
 
 class TProdResourceDelete(BaseModel):
     id: int = Field(..., gt=0)

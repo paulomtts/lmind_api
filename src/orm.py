@@ -390,7 +390,7 @@ class DBManager():
         return df
 
 
-    def upsert(self, table_cls, data_list: List[dict], single: bool = False, id_user: str = None):
+    def upsert(self, table_cls, data_list: List[dict], single: bool = False):
         """
         Attempts to insert data into the specified table, and updates the data if the insert fails because of a unique constraint violation.
 
