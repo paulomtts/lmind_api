@@ -5,6 +5,7 @@ from collections import namedtuple
 
 
 REGEX_SHA256 = r'^[a-fA-F0-9]{64}$'
+REGEX_UUID4 = r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$'
 REGEX_NUMBERS = r'^[0-9]+$'
 REGEX_WORDS = r"^[a-zA-Z\s]+$"
 REGEX_IP = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
@@ -131,6 +132,30 @@ class TProdResourceSkills(SQLModel, table=True):
     id_resource: int = Field(foreign_key='tprod_resources.id', primary_key=True)
     id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
 
+class TProdProducts(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tprod_products'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    id_tag: int = Field(foreign_key='tsys_tags.id')
+    name: str = Field(regex=REGEX_WORDS)
+    description: str = Field(regex=REGEX_WORDS)
+    weight: float = Field(default=0.0)
+    id_unit_mass: int = Field(foreign_key='tsys_units.id')
+    height: float = Field(default=0.0)
+    width: float = Field(default=0.0)
+    depth: float = Field(default=0.0)
+    id_unit_volume: int = Field(foreign_key='tsys_units.id') 
+
+class TProdRoutes(TimestampModel, UserstampModel, table=True):
+    __tablename__ = 'tprod_routes'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    id_tag: int = Field(foreign_key='tsys_tags.id')
+    id_task: int = Field(foreign_key='tprod_tasks.id')
+    node_uid: str = Field(regex=REGEX_UUID4)
+    node_level: int = Field(default=0)
+    node_quantity: int = Field(default=1)
+
 
 SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])
 TABLE_MAP = {
@@ -138,4 +163,6 @@ TABLE_MAP = {
     , 'tsys_tags': SimpleQuery("Tags", TSysTags)
     , 'tsys_keywords': SimpleQuery("Keywords", TSysKeywords)
     , 'tprod_resourceskills': SimpleQuery("Resource's skills", TProdResourceSkills)
+    , 'tprod_taskskills': SimpleQuery("Task's skills", TProdTaskSkills)
+    , 'tprod_routes': SimpleQuery("Routes", TProdRoutes)
 }

@@ -92,15 +92,13 @@ class TProdResourceDelete(BaseModel):
     id: int = Field(..., gt=0)
 
 
-class TProdTaskUpsert(BaseModel):
+class TaskObject(BaseModel):
     id: Optional[int] = None
     name: str
     description: str
     duration: float
     id_unit: int
     interruptible: Optional[bool] = False
-    created_by: Optional[str] = None
-    created_at: Optional[str] = None
     updated_by: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -112,6 +110,11 @@ class TProdTaskUpsert(BaseModel):
                 detail='Required fields must not be empty.',
             )
         return value
+
+class TProdTaskUpsert(BaseModel):
+    task: TaskObject
+    id_skill_list: set[int]
+    keyword_list: set[str]
 
 class TProdTaskDelete(BaseModel):
     id: int = Field(..., gt=0)

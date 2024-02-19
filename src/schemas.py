@@ -40,6 +40,9 @@ class TableNames(BaseModel):
         , 'tprod_skills'
         , 'tprod_tasks'
         , 'tprod_resourceskills'
+        , 'tprod_taskskills'
+        , 'tprod_products'
+        , 'tprod_routes'
     ]
 
 

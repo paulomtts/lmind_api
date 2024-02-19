@@ -9,6 +9,9 @@ from src.models import *
 created_by_user = aliased(TSysUsers)
 updated_by_user = aliased(TSysUsers)
 
+unit_mass = aliased(TSysUnits)
+unit_volume = aliased(TSysUnits)
+
 # TSYS
 def tsys_units_query(type = None):
     query =  select(
@@ -74,15 +77,52 @@ tprod_tasks_query = select(
     , TProdTasks.name
     , TProdTasks.description
     , TProdTasks.duration
-    , TSysUnits.name.label('id_unit')
+    , TSysUnits.id.label('id_unit')
     , TSysUnits.name.label('unit')
     , TProdTasks.interruptible
     , TProdTasks.error_margin
+    , created_by_user.name.label('created_by')
+    , TProdTasks.created_at.label('created_at')
+    , updated_by_user.name.label('updated_by')
+    , TProdTasks.updated_at.label('updated_at')
 ).join(
     TSysUnits
     , TProdTasks.id_unit == TSysUnits.id
+).outerjoin(
+    created_by_user
+    , TProdTasks.created_by == created_by_user.google_id
+).outerjoin(
+    updated_by_user
+    , TProdTasks.updated_by == updated_by_user.google_id
 ).order_by(
     TProdTasks.name
+)
+
+tprod_products_query = select(
+    TProdProducts.id
+    , TSysTags.id.label('id_tag')
+    , TSysTags.agg.label('agg_tag')
+    , TProdProducts.name
+    , TProdProducts.description
+    , TProdProducts.weight
+    , unit_mass.id.label('id_unit_mass')
+    , unit_mass.name.label('name_unit_mass')
+    , TProdProducts.height
+    , TProdProducts.width
+    , TProdProducts.depth
+    , unit_volume.id.label('id_unit_volume')
+    , unit_volume.name.label('name_unit_volume')
+).join(
+    TSysTags
+    , TProdProducts.id_tag == TSysTags.id
+).join(
+    unit_mass
+    , TProdProducts.id_unit_mass == unit_mass.id
+).join(
+    unit_volume
+    , TProdProducts.id_unit_volume == unit_volume.id
+).order_by(
+    TProdProducts.name
 )
 
 
@@ -92,4 +132,5 @@ QUERY_MAP = {
     , 'tprod_skills': ComplexQuery(tprod_skills_query, 'Skills')
     , 'tprod_resources': ComplexQuery(tprod_resources_query, 'Resources')
     , 'tprod_tasks': ComplexQuery(tprod_tasks_query, 'Tasks')
+    , 'tprod_products': ComplexQuery(tprod_products_query, 'Products')
 }

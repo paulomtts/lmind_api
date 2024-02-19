@@ -125,3 +125,33 @@ CREATE TABLE tprod_resourceskills (
     , id_skill INTEGER REFERENCES tprod_skills(id)
     , PRIMARY key (id_resource, id_skill)
 );
+
+CREATE TABLE tprod_routes (
+    id SERIAL PRIMARY KEY
+    , id_tag INTEGER REFERENCES tsys_tags(id)
+    , id_task INTEGER REFERENCES tprod_tasks(id)
+    , node_uid VARCHAR(36) NOT NULL
+    , node_level INTEGER NOT NULL
+    , node_quantity INTEGER DEFAULT 1
+    , created_by VARCHAR(64)
+    , created_at TIMESTAMP DEFAULT NOW()
+    , updated_by VARCHAR(64)
+    , updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE tprod_products (
+    id SERIAL PRIMARY KEY
+    , id_tag INTEGER REFERENCES tsys_tags(id)
+    , name VARCHAR(100) NOT NULL
+    , description VARCHAR(255) NOT NULL
+    , weight REAL NOT NULL
+    , id_unit_mass INTEGER REFERENCES tsys_units(id) NOT NULL
+    , height REAL NOT NULL
+    , width REAL NOT NULL
+    , depth REAL NOT NULL
+    , id_unit_volume INTEGER REFERENCES tsys_units(id) NOT NULL
+    , created_by VARCHAR(64)
+    , created_at TIMESTAMP DEFAULT NOW()
+    , updated_by VARCHAR(64)
+    , updated_at TIMESTAMP DEFAULT NOW()
+);
