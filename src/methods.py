@@ -12,6 +12,7 @@ from collections import namedtuple
 
 import pandas as pd
 import datetime
+import json
 
 
 # Decorators
@@ -24,12 +25,12 @@ def api_output(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         data, status, message = func(*args, **kwargs)
-        ouput = APIOutput(data=data, message=message)
+        output = APIOutput(data=data, message=message)
 
         if status in [204, 304]:
-            return Response(status_code=status, headers={'message': ouput.message})
+            return Response(status_code=status, headers={'message': output.message})
 
-        return JSONResponse(status_code=status, content={'data': ouput.data, 'message': ouput.message})
+        return JSONResponse(status_code=status, content={'data': output.data, 'message': output.message})
     return wrapper
 
 

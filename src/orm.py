@@ -207,7 +207,8 @@ class DBManager():
         dct = df.to_dict(orient='records')
 
         if not dct:
-            return []
+            # return []
+            return None
         else:
             dct = dct[0]
 
@@ -216,7 +217,7 @@ class DBManager():
         return tuple_cls(**dct)
     
 
-    def _build_conditions(self, table_cls, filters: WhereConditions):
+    def _build_conditions(self, table_cls, filters: WhereConditions = None, pks: dict[str, Any] = None):
         """
         Builds the conditions for a query.
 
@@ -229,21 +230,31 @@ class DBManager():
         """
 
         conditions = []
-        if filters.and_:
-            and_conditions = [getattr(table_cls, column).in_(values) for column, values in filters.and_.items()]
-            conditions.append(and_(*and_conditions))
+        if filters:
+            if filters.and_:
+                and_conditions = [getattr(table_cls, column).in_(values) for column, values in filters.and_.items()]
+                conditions.append(and_(*and_conditions))
 
-        if filters.or_:
-            or_conditions = [getattr(table_cls, column).in_(values) for column, values in filters.or_.items()]
-            conditions.append(or_(*or_conditions))
+            if filters.or_:
+                or_conditions = [getattr(table_cls, column).in_(values) for column, values in filters.or_.items()]
+                conditions.append(or_(*or_conditions))
 
-        if filters.like_:
-            like_conditions = [getattr(table_cls, attr).like(val) for attr, values in filters.like_.items() for val in values]
-            conditions.append(or_(*like_conditions))
+            if filters.like_:
+                like_conditions = [getattr(table_cls, attr).like(val) for attr, values in filters.like_.items() for val in values]
+                conditions.append(or_(*like_conditions))
 
-        if filters.not_like_:
-            not_like_conditions = [getattr(table_cls, attr).notlike(val) for attr, values in filters.not_like_.items() for val in values]
-            conditions.append(and_(*not_like_conditions))
+            if filters.not_like_:
+                not_like_conditions = [getattr(table_cls, attr).notlike(val) for attr, values in filters.not_like_.items() for val in values]
+                conditions.append(and_(*not_like_conditions))
+
+        if pks:
+            pk_conditions = [getattr(table_cls, pk) == value for pk, value in pks.items()]
+            conditions.append(and_(*pk_conditions))
+
+
+        created_by = getattr(table_cls, 'created_by', None)
+        if created_by:
+            conditions.append(and_(created_by != 'system'))
 
         return conditions
 
@@ -338,10 +349,16 @@ class DBManager():
 
         results = []
         for data in data_list:
-            data.pop('created_at', None) # reason: ensure that the created_at column is not updated
 
-            conditions = [getattr(table_cls, pk) == data[pk] for pk in pk_columns]
-            conditions.append(getattr(table_cls, 'created_by', None) != 'system')
+            created_by = data.get('created_by', None)
+            if created_by == 'system':
+                raise SystemDataError("Cannot modify system data.")
+
+            data.pop('created_at', None) # reason: ensure that the created_at column is not updated
+            data.pop('created_by', None) # reason: ensure that the created_by column is not updated
+
+            pks_dct = {pk: data[pk] for pk in pk_columns}
+            conditions = self._build_conditions(table_cls, None, pks_dct)
             
             statement = update(table_cls).where(*conditions).values(data).returning(table_cls)
 
@@ -370,17 +387,9 @@ class DBManager():
             - If `single` is `True`, a `namedtuple` representing the first deleted record.
         """
 
-        conditions = self._build_conditions(table_cls, filters) if filters else []
-
-        for dct in filters:
-            for values in dct.values():
-                if 'system' in values:
-                    raise ValueError("Cannot delete system records.")
-                        
-        not_system_conditions = [getattr(table_cls, 'created_by', None) != 'system']
-
-        statement = delete(table_cls).where(and_(*conditions, *not_system_conditions)).returning(table_cls)
-
+        conditions = self._build_conditions(table_cls, filters) if filters else []                        
+        statement = delete(table_cls).where(*conditions).returning(table_cls)
+        
         returnings = self.session.execute(statement)
         df = self._parse_returnings(returnings, mapping_cls=table_cls)
 
@@ -407,12 +416,24 @@ class DBManager():
         results = []
         for data in data_list:
 
+            created_by = data.get('created_by', None)
+            if created_by == 'system':
+                raise SystemDataError("Cannot add or modify system data.")
+            
+            data.pop('created_at', None) # reason: ensure that the created_at column is not updated
+
             inspector = inspect(table_cls)
             pk_columns = [column.name for column in inspector.primary_key] 
             pk_value_list = [getattr(table_cls, pk) for pk in pk_columns]
             
+            conditions = self._build_conditions(table_cls)
+
             statement = postgres_upsert(table_cls).values(data)\
-                        .on_conflict_do_update(index_elements=pk_value_list, set_=data)\
+                        .on_conflict_do_update(
+                            index_elements=pk_value_list
+                            , set_=data
+                            , where=and_(*conditions) # reason: prevent updating system data
+                        )\
                         .returning(table_cls)
             
             returnings = self.session.execute(statement)

@@ -1,6 +1,6 @@
 from sqlmodel import Field, SQLModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from collections import namedtuple
 
 

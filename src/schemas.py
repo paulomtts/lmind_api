@@ -115,6 +115,7 @@ class APIOutput(BaseModel):
         """
         Converts the data content to JSON strings.
         """
+
         if isinstance(data, pd.DataFrame): # CRUD non-specific
             return data.to_json(orient='records')
         elif hasattr(data, '_asdict'): # Custom with single=true
@@ -124,11 +125,11 @@ class APIOutput(BaseModel):
 
             for key, data in data.items():
                 if isinstance(data, pd.DataFrame):
-                    parsed_data[key] = data.to_json(orient='records')
+                    parsed_data[key] = data.to_dict(orient='records')
                 elif hasattr(data, '_asdict'):
-                    parsed_data[key] = json.dumps(data._asdict())
+                    parsed_data[key] = data._asdict()
                 else:
-                    parsed_data[key] = json.dumps(data)
+                    parsed_data[key] = data
 
-            return parsed_data
+            return json.dumps(parsed_data)
         return data

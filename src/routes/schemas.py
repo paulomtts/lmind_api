@@ -39,10 +39,11 @@ class TSysUnitInsert(TSysUnitsBase):
 class TSysUnitDelete(TSysUnitsBase):
     id: int = Field(..., gt=0)
 
-class TSysProductTagInsert(BaseModel): # THIS IS AN EXAMPLE
-    code_a: Optional[str] = None
-    counter_a: Optional[int] = None
-    counter_b: Optional[int] = None
+
+class TSysTagCheckAvailability(BaseModel):
+    agg: str
+    type: Literal['product', 'route']
+
 
 
 # TPROD

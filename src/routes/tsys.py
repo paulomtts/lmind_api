@@ -5,7 +5,7 @@ from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
 from src.models import TSysUsers, TSysUnits, TSysTags
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
-from src.routes.schemas import TSysUnitInsert, TSysUnitDelete, TSysProductTagInsert
+from src.routes.schemas import TSysUnitInsert, TSysUnitDelete, TSysTagCheckAvailability
 from src.queries import tsys_units_query
 
 from collections import namedtuple
@@ -79,3 +79,23 @@ async def delete_unit(input: TSysUnitDelete):
         return db.query(None, statement=tsys_units_query())
 
     return tsys__delete_unit(filters)
+
+
+# tsys_tags
+@tsys_router.post("/tsys/tags/check-availability", dependencies=[Depends(validate_session)])
+async def check_tag_availability(input: TSysTagCheckAvailability):
+    """
+    Check if a tag is available.
+    """
+
+    filters = WhereConditions(and_={'agg': [input.agg]})
+
+    @api_output
+    @db.catching(messages=SuccessMessages('Tag is available!'))
+    def tsys__check_tag_availability(filters: WhereConditions) -> DBOutput:
+
+        tag = db.query(TSysTags, filters=filters, single=True)
+
+        return {'available': tag is None}
+
+    return tsys__check_tag_availability(filters)
