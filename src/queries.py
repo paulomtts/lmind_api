@@ -12,6 +12,7 @@ updated_by_user = aliased(TSysUsers)
 unit_mass = aliased(TSysUnits)
 unit_volume = aliased(TSysUnits)
 
+
 # TSYS
 def tsys_units_query(type = None):
     query =  select(
@@ -100,8 +101,12 @@ tprod_tasks_query = select(
 
 tprod_products_query = select(
     TProdProducts.id
-    , TSysTags.id.label('id_tag')
-    , TSysTags.agg.label('agg_tag')
+    , TProdProductTags.id.label('id_tag')
+    , (
+        TProdProductTags.category + \
+        TProdProductTags.registry_counter + \
+        TProdProductTags.subcategory
+    ).label('tag')
     , TProdProducts.name
     , TProdProducts.description
     , TProdProducts.weight
@@ -113,8 +118,8 @@ tprod_products_query = select(
     , unit_volume.id.label('id_unit_volume')
     , unit_volume.name.label('name_unit_volume')
 ).join(
-    TSysTags
-    , TProdProducts.id_tag == TSysTags.id
+    TProdProductTags
+    , TProdProducts.id_tag == TProdProductTags.id
 ).join(
     unit_mass
     , TProdProducts.id_unit_mass == unit_mass.id

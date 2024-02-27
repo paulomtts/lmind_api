@@ -40,55 +40,19 @@ CREATE TABLE tsys_categories (
     id serial primary key
     , name varchar(50) not null
     , description varchar(255) not null
-    , type varchar(50) not null -- units, skills, resources, tasks, etc
-);
-
-CREATE TABLE tsys_tags (
-	id SERIAL PRIMARY KEY
-    , description VARCHAR(255) NOT NULL
-	, type VARCHAR(64) not NULL
-	, code_a VARCHAR(255)
-	, counter_a INT
-	, code_b VARCHAR(255)
-	, counter_b INT
-	, code_c VARCHAR(255)
-	, counter_c INT
-	, code_d VARCHAR(255)
-	, counter_d INT
-	, code_e VARCHAR(255)
-	, counter_e INT
-	, agg VARCHAR(255) GENERATED ALWAYS AS (
-	    COALESCE(code_a, '') || COALESCE(CAST(counter_a AS VARCHAR), '') ||
-	    COALESCE(code_b, '') || COALESCE(CAST(counter_b AS VARCHAR), '') ||
-	    COALESCE(code_c, '') || COALESCE(CAST(counter_c AS VARCHAR), '') ||
-	    COALESCE(code_d, '') || COALESCE(CAST(counter_d AS VARCHAR), '') ||
-	    COALESCE(code_e, '') || COALESCE(CAST(counter_e AS VARCHAR), '')
-	) stored
+    , reference varchar(50) not null -- units, skills, resources, tasks, etc
+    , status BOOLEAN DEFAULT TRUE
 	, created_by VARCHAR(64)
 	, created_at TIMESTAMP DEFAULT NOW()
 	, updated_by VARCHAR(64)
 	, updated_at TIMESTAMP DEFAULT NOW()
-    , CONSTRAINT not_null_or_empty_agg CHECK (agg <> '')
-	, CONSTRAINT unique_aggregate_combination UNIQUE (
-        code_a
-        , counter_a
-        , code_b
-        , counter_b
-        , code_c
-        , counter_c
-        , code_d
-        , counter_d
-        , code_e
-        , counter_e
-        , type
-    )
 );
 
 CREATE TABLE tsys_keywords (
     id_object INTEGER
-    , type VARCHAR(15) NOT NULL
+    , reference VARCHAR(15) NOT NULL
     , keyword VARCHAR(30) NOT NULL
-    , CONSTRAINT unique_constraint UNIQUE (id_object, type, keyword)
+    , CONSTRAINT unique_constraint UNIQUE (id_object, reference, keyword)
 );
 
 
@@ -139,9 +103,18 @@ CREATE TABLE tprod_resourceskills (
     , PRIMARY key (id_resource, id_skill)
 );
 
+create table tprod_producttags (
+	id serial primary key
+	, category VARCHAR(3)
+	, registry_counter INTEGER
+	, produced_counter INTEGER
+	, subcategory VARCHAR(3)
+    , CONSTRAINT unique_tah UNIQUE (category, registry_counter, produced_counter, subcategory)
+);
+
 CREATE TABLE tprod_routes (
     id SERIAL PRIMARY KEY
-    , id_tag INTEGER REFERENCES tsys_tags(id)
+    , id_tag INTEGER REFERENCES tprod_producttags(id)
     , id_task INTEGER REFERENCES tprod_tasks(id)
     , node_uid VARCHAR(36) NOT NULL
     , node_level INTEGER NOT NULL
@@ -154,7 +127,7 @@ CREATE TABLE tprod_routes (
 
 CREATE TABLE tprod_products (
     id SERIAL PRIMARY KEY
-    , id_tag INTEGER REFERENCES tsys_tags(id)
+    , id_tag INTEGER REFERENCES tprod_producttags(id)
     , name VARCHAR(100) NOT NULL
     , description VARCHAR(255) NOT NULL
     , weight REAL NOT NULL

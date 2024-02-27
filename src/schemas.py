@@ -11,10 +11,10 @@ class ForbiddenOperationError(Exception):
 
 
 class WhereConditions(BaseModel):
-    or_: Optional[dict[str, List[str | int]]] = {}
-    and_: Optional[dict[str, List[str | int]]] = {}
-    like_: Optional[dict[str, List[str | int]]] = {}
-    not_like_: Optional[dict[str, List[str | int]]] = {}
+    or_: Optional[dict[str, List[str | int | None]]] = {}
+    and_: Optional[dict[str, List[str | int | None]]] = {}
+    like_: Optional[dict[str, List[str | int | None]]] = {}
+    not_like_: Optional[dict[str, List[str | int | None]]] = {}
 
     def __iter__(self):
         yield self.or_
@@ -34,13 +34,14 @@ class TableNames(BaseModel):
     table_name: Literal[
         'tsys_units'
         , 'tsys_categories'
-        , 'tsys_tags'
         , 'tsys_keywords'
+        
         , 'tprod_resources'
         , 'tprod_skills'
         , 'tprod_tasks'
         , 'tprod_resourceskills'
         , 'tprod_taskskills'
+        , 'tprod_producttags'
         , 'tprod_products'
         , 'tprod_routes'
     ]

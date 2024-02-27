@@ -40,10 +40,34 @@ class TSysUnitDelete(TSysUnitsBase):
     id: int = Field(..., gt=0)
 
 
-class TSysTagCheckAvailability(BaseModel):
-    agg: str
-    type: Literal['product', 'route']
+class TSysCategoriesInsert(BaseModel):
+    name: str
+    description: str
+    reference: str
+    status: Optional[bool] = True
 
+    @validator('name', 'description', 'reference')
+    def name_must_not_be_empty(cls, value):
+        if not value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Required fields must not be empty.',
+            )
+        return value
+    
+    @validator('reference')
+    def reference_must_be_valid(cls, value):
+        if value not in ['units', 'products-category', 'products-subcategory']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Reference must be one of the following: product, resource, task.',
+            )
+        return value
+        
+
+class TSysCategoriesChangeStatus(BaseModel):
+    id: int = Field(..., gt=0)
+    status: bool
 
 
 # TPROD
@@ -119,3 +143,14 @@ class TProdTaskUpsert(BaseModel):
 
 class TProdTaskDelete(BaseModel):
     id: int = Field(..., gt=0)
+
+
+class TProdProductTagCheckAvailability(BaseModel):
+    category: str
+    registry_counter: int
+
+class TProdProductTagInsert(BaseModel):
+    id_category: int
+    registry_counter: Optional[int] = None
+    produced_counter: Optional[int] = None
+    id_product: Optional[int] = None

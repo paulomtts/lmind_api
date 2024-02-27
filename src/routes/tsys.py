@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TSysUsers, TSysUnits, TSysTags
+from src.models import TSysUsers, TSysUnits, TSysCategories
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
-from src.routes.schemas import TSysUnitInsert, TSysUnitDelete, TSysTagCheckAvailability
+from src.routes.schemas import TSysUnitInsert, TSysUnitDelete, TProdProductTagCheckAvailability, TProdProductTagInsert, TSysCategoriesInsert, TSysCategoriesChangeStatus
 from src.queries import tsys_units_query
 
 from collections import namedtuple
@@ -81,21 +81,47 @@ async def delete_unit(input: TSysUnitDelete):
     return tsys__delete_unit(filters)
 
 
-# tsys_tags
-@tsys_router.post("/tsys/tags/check-availability", dependencies=[Depends(validate_session)])
-async def check_tag_availability(input: TSysTagCheckAvailability):
+# tsys_categories
+@tsys_router.get("/tsys/categories/insert")
+async def insert_category(input: TSysCategoriesInsert, id_user: str = Depends(validate_session)):
     """
-    Check if a tag is available.
+    Insert categories and return the entire table.
     """
 
-    filters = WhereConditions(and_={'agg': [input.agg]})
+    data = input.dict()
+    append_timestamps(data)
+    append_userstamps(data, id_user)
 
     @api_output
-    @db.catching(messages=SuccessMessages('Tag is available!'))
-    def tsys__check_tag_availability(filters: WhereConditions) -> DBOutput:
+    @db.catching(messages=SuccessMessages('Category created!'))
+    def tsys__insert_category(data: dict) -> DBOutput:
 
-        tag = db.query(TSysTags, filters=filters, single=True)
+        db.insert(TSysCategories, [data], single=True)
+        db.session.commit()
 
-        return {'available': tag is None}
+        return db.query(None, statement=tsys_units_query())
 
-    return tsys__check_tag_availability(filters)
+    return tsys__insert_category(data)
+
+@tsys_router.post("/tsys/categories/change-status")
+async def update_category(input: TSysCategoriesChangeStatus, id_user: str = Depends(validate_session)):
+    """
+    Change category status and return the entire table.
+    """
+
+    data = input.dict()
+    append_timestamps(data)
+    append_userstamps(TSysCategories, data, id_user)
+
+    filters = WhereConditions(and_={'id': [data['id']]})
+
+    @api_output
+    @db.catching(messages=SuccessMessages('Category status changed!'))
+    def tsys__update_category(data: dict, filters: WhereConditions) -> DBOutput:
+            
+            db.update(TSysCategories, data, filters=filters)
+            db.session.commit()
+    
+            return db.query(TSysCategories)
+    
+    return tsys__update_category(data, filters)

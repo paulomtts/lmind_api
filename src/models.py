@@ -62,36 +62,20 @@ class TSysUnits(SQLModel, table=True):
     type: str = Field(regex=REGEX_WORDS)
     created_by: str = Field(regex=REGEX_WORDS)
     
-class TSysCategories(SQLModel, table=True):
+class TSysCategories(TimestampModel, UserstampModel, table=True):
     __tablename__ = 'tsys_categories'
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(regex=REGEX_WORDS)
     description: str = Field(regex=REGEX_WORDS)
-    type: str = Field(regex=REGEX_WORDS)
-    
-class TSysTags(TimestampModel, UserstampModel, table=True):
-    __tablename__ = 'tsys_tags'
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    code_a: Optional[str] = Field(default=None, regex=REGEX_WORDS)
-    counter_a: Optional[int] = Field(default=None)
-    code_b: Optional[str] = Field(default=None, regex=REGEX_WORDS)
-    counter_b: Optional[int] = Field(default=None)
-    code_c: Optional[str] = Field(default=None, regex=REGEX_WORDS)
-    counter_c: Optional[int] = Field(default=None)
-    code_d: Optional[str] = Field(default=None, regex=REGEX_WORDS)
-    counter_d: Optional[int] = Field(default=None)
-    code_e: Optional[str] = Field(default=None, regex=REGEX_WORDS)
-    counter_e: Optional[int] = Field(default=None)
-    type: str = Field(regex=REGEX_WORDS)
-    agg: str = Field(regex=REGEX_WORDS)
+    reference: str = Field(regex=REGEX_WORDS)
+    status: bool = Field(default=True)
     
 class TSysKeywords(SQLModel, table=True):
     __tablename__ = 'tsys_keywords'
 
     id_object: int = Field(primary_key=True)
-    type: str = Field(regex=REGEX_WORDS, primary_key=True)
+    reference: str = Field(regex=REGEX_WORDS, primary_key=True)
     keyword: str = Field(regex=REGEX_WORDS, primary_key=True)
 
 
@@ -131,12 +115,21 @@ class TProdResourceSkills(SQLModel, table=True):
 
     id_resource: int = Field(foreign_key='tprod_resources.id', primary_key=True)
     id_skill: int = Field(foreign_key='tprod_skills.id', primary_key=True)
+    
+class TProdProductTags(SQLModel, table=True):
+    __tablename__ = 'tprod_producttags'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    category: str = Field(regex=REGEX_WORDS)
+    registry_counter: int = Field(default=0)
+    produced_counter: int = Field(default=0)
+    subcategory: str = Field(regex=REGEX_WORDS)
 
 class TProdProducts(TimestampModel, UserstampModel, table=True):
     __tablename__ = 'tprod_products'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    id_tag: int = Field(foreign_key='tsys_tags.id')
+    id_tag: int = Field(foreign_key='tprod_producttags.id')
     name: str = Field(regex=REGEX_WORDS)
     description: str = Field(regex=REGEX_WORDS)
     weight: float = Field(default=0.0)
@@ -150,7 +143,7 @@ class TProdRoutes(TimestampModel, UserstampModel, table=True):
     __tablename__ = 'tprod_routes'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    id_tag: int = Field(foreign_key='tsys_tags.id')
+    id_tag: int = Field(foreign_key='tprod_producttags.id')
     id_task: int = Field(foreign_key='tprod_tasks.id')
     node_uid: str = Field(regex=REGEX_UUID4)
     node_level: int = Field(default=0)
@@ -160,9 +153,10 @@ class TProdRoutes(TimestampModel, UserstampModel, table=True):
 SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])
 TABLE_MAP = {
     'tsys_categories': SimpleQuery("Categories", TSysCategories)
-    , 'tsys_tags': SimpleQuery("Tags", TSysTags)
     , 'tsys_keywords': SimpleQuery("Keywords", TSysKeywords)
+
     , 'tprod_resourceskills': SimpleQuery("Resource's skills", TProdResourceSkills)
     , 'tprod_taskskills': SimpleQuery("Task's skills", TProdTaskSkills)
     , 'tprod_routes': SimpleQuery("Routes", TProdRoutes)
+    , 'tprod_producttags': SimpleQuery("Product's tags", TProdProductTags)
 }

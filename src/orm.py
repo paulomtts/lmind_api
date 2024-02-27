@@ -427,12 +427,11 @@ class DBManager():
             pk_value_list = [getattr(table_cls, pk) for pk in pk_columns]
             
             conditions = self._build_conditions(table_cls)
-
             statement = postgres_upsert(table_cls).values(data)\
                         .on_conflict_do_update(
                             index_elements=pk_value_list
                             , set_=data
-                            , where=and_(*conditions) # reason: prevent updating system data
+                            , where=(and_(*conditions) if conditions else None) # reason: prevent updating system data
                         )\
                         .returning(table_cls)
             

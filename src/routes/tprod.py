@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills, TSysKeywords, TProdTaskSkills
+from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills, TSysKeywords, TProdTaskSkills, TProdProductTags
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
 from src.routes.schemas import *
 from src.queries import tprod_skills_query, tprod_resources_query, tprod_tasks_query
@@ -89,10 +89,10 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
             keywords_delete_filters = WhereConditions(and_={'id_object': [resource['id']], 'type': ['resource']}, not_like={'keyword': keyword_list})
             db.delete(TSysKeywords, filters=keywords_delete_filters)
 
-        db.upsert(TSysKeywords, [{'id_object': id_resource, 'type': 'resource', 'keyword': keyword} for keyword in keyword_list]) 
+        db.upsert(TSysKeywords, [{'id_object': id_resource, 'reference': 'resource', 'keyword': keyword} for keyword in keyword_list]) 
+
         db.upsert(TProdResourceSkills, [{'id_resource': id_resource, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
-
         return db.query(None, statement=tprod_resources_query)
     
     return tprod__upsert_resources(resource, keyword_list, id_skill_list)
@@ -110,7 +110,7 @@ async def delete_resources(input: TProdResourceDelete):
     def tprod__delete_resources(filters: WhereConditions) -> DBOutput:
 
         db.delete(TProdResourceSkills, filters=WhereConditions(and_={'id_resource': [input.id]}))
-        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'type': ['resource']}))
+        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['resource']}))
         db.delete(TProdResources, filters=filters)
         db.session.commit()
 
@@ -146,10 +146,10 @@ async def upsert_tasks(input: TProdTaskUpsert, id_user: str = Depends(validate_s
             skills_delete_filters = WhereConditions(and_={'id_task': [task['id']]}, not_like={'id_skill': id_skill_list})
             db.delete(TProdTaskSkills, filters=skills_delete_filters)
 
-            keywords_delete_filters = WhereConditions(and_={'id_object': [task['id']], 'type': ['task']}, not_like={'keyword': keyword_list})
+            keywords_delete_filters = WhereConditions(and_={'id_object': [task['id']], 'reference': ['task']}, not_like={'keyword': keyword_list})
             db.delete(TSysKeywords, filters=keywords_delete_filters)
 
-        db.upsert(TSysKeywords, [{'id_object': id_task, 'type': 'task', 'keyword': keyword} for keyword in keyword_list])
+        db.upsert(TSysKeywords, [{'id_object': id_task, 'reference': 'task', 'keyword': keyword} for keyword in keyword_list])
         db.upsert(TProdTaskSkills, [{'id_task': id_task, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
 
@@ -170,10 +170,44 @@ async def delete_tasks(input: TProdTaskDelete):
     def tprod__delete_tasks(filters: WhereConditions) -> DBOutput:
 
         db.delete(TProdTaskSkills, filters=WhereConditions(and_={'id_task': [input.id]}))
-        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'type': ['task']}))
+        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['task']}))
         db.delete(TProdTasks, filters=filters)
         db.session.commit()
 
         return db.query(None, statement=tprod_tasks_query)
 
     return tprod__delete_tasks(filters)
+
+
+
+@tprod_router.post("/tprod/products/tag-check-availability", dependencies=[Depends(validate_session)])
+async def product_tag_check_availability(input: TProdProductTagCheckAvailability):
+    """
+    Check the availability of a product tag.
+    """
+
+    filters = WhereConditions(and_={'category': [input.category]})
+
+    @api_output
+    @db.catching(messages=SuccessMessages('Product tag is available!'))
+    def tprod__product_tag_check_availability(filters: WhereConditions) -> DBOutput:
+
+        returning_df = db.query(TProdProductTags, statement=None, filters=filters)
+        is_available = input.registry_counter not in returning_df['registry_counter'].tolist()
+
+        if not is_available:
+            highest_registry_counter = int(returning_df['registry_counter'].max() or 0)
+
+            return {
+                'object': {
+                    'category': input.category
+                    , 'registry_counter': highest_registry_counter + 1
+                }
+                , 'isAvailable': False
+                , 'message': f' product tag is not available. Returned a suggestion.'
+            }
+        
+        return {'isAvailable': True, 'message': ' product tag is available.'}
+    return tprod__product_tag_check_availability(filters)
+
+    
