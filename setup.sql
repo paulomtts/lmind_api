@@ -55,6 +55,28 @@ CREATE TABLE tsys_keywords (
     , CONSTRAINT unique_constraint UNIQUE (id_object, reference, keyword)
 );
 
+CREATE TABLE tsys_nodes (
+    uuid VARCHAR(36) NOT NULL
+    , reference VARCHAR(15) NOT NULL
+    , id_object INTEGER NOT NULL
+    , layer INTEGER NOT NULL
+    , quantity INTEGER DEFAULT 1
+    , created_by VARCHAR(64)
+    , created_at TIMESTAMP DEFAULT NOW()
+    , updated_by VARCHAR(64)
+    , updated_at TIMESTAMP DEFAULT NOW()
+    , CONSTRAINT unique_constraint UNIQUE (uuid, reference, id_object)
+)
+
+CREATE TABLE tsys_edges (
+    id serial primary key
+    , id_tag INTEGER NOT NULL
+    , reference VARCHAR(15) NOT NULL -- tag reference
+    , source_uid VARCHAR(36) NOT NULL
+    , target_uid VARCHAR(36) NOT NULL
+    , type VARCHAR(50) DEFAULT 'default'
+)
+
 
 
 -- TPROD
