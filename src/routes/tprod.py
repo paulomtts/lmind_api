@@ -86,10 +86,10 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
             skills_delete_filters = WhereConditions(and_={'id_resource': [resource['id']]}, not_like={'id_skill': id_skill_list})
             db.delete(TProdResourceSkills, filters=skills_delete_filters)
 
-            keywords_delete_filters = WhereConditions(and_={'id_object': [resource['id']], 'type': ['resource']}, not_like={'keyword': keyword_list})
+            keywords_delete_filters = WhereConditions(and_={'id_object': [resource['id']], 'reference': ['tprod_resources']}, not_like={'keyword': keyword_list})
             db.delete(TSysKeywords, filters=keywords_delete_filters)
 
-        db.upsert(TSysKeywords, [{'id_object': id_resource, 'reference': 'resource', 'keyword': keyword} for keyword in keyword_list]) 
+        db.upsert(TSysKeywords, [{'id_object': id_resource, 'reference': 'tprod_resources', 'keyword': keyword} for keyword in keyword_list]) 
 
         db.upsert(TProdResourceSkills, [{'id_resource': id_resource, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
@@ -110,7 +110,7 @@ async def delete_resources(input: TProdResourceDelete):
     def tprod__delete_resources(filters: WhereConditions) -> DBOutput:
 
         db.delete(TProdResourceSkills, filters=WhereConditions(and_={'id_resource': [input.id]}))
-        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['resource']}))
+        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['tprod_resources']}))
         db.delete(TProdResources, filters=filters)
         db.session.commit()
 
@@ -146,10 +146,10 @@ async def upsert_tasks(input: TProdTaskUpsert, id_user: str = Depends(validate_s
             skills_delete_filters = WhereConditions(and_={'id_task': [task['id']]}, not_like={'id_skill': id_skill_list})
             db.delete(TProdTaskSkills, filters=skills_delete_filters)
 
-            keywords_delete_filters = WhereConditions(and_={'id_object': [task['id']], 'reference': ['task']}, not_like={'keyword': keyword_list})
+            keywords_delete_filters = WhereConditions(and_={'id_object': [task['id']], 'reference': ['tprod_tasks']}, not_like={'keyword': keyword_list})
             db.delete(TSysKeywords, filters=keywords_delete_filters)
 
-        db.upsert(TSysKeywords, [{'id_object': id_task, 'reference': 'task', 'keyword': keyword} for keyword in keyword_list])
+        db.upsert(TSysKeywords, [{'id_object': id_task, 'reference': 'tprod_tasks', 'keyword': keyword} for keyword in keyword_list])
         db.upsert(TProdTaskSkills, [{'id_task': id_task, 'id_skill': id_skill} for id_skill in id_skill_list])
         db.session.commit()
 
@@ -170,7 +170,7 @@ async def delete_tasks(input: TProdTaskDelete):
     def tprod__delete_tasks(filters: WhereConditions) -> DBOutput:
 
         db.delete(TProdTaskSkills, filters=WhereConditions(and_={'id_task': [input.id]}))
-        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['task']}))
+        db.delete(TSysKeywords, filters=WhereConditions(and_={'id_object': [input.id], 'reference': ['tprod_tasks']}))
         db.delete(TProdTasks, filters=filters)
         db.session.commit()
 
