@@ -56,24 +56,21 @@ CREATE TABLE tsys_keywords (
 );
 
 CREATE TABLE tsys_nodes (
-    uuid VARCHAR(36) NOT NULL
-    , reference VARCHAR(15) NOT NULL
+    id serial primary key
     , id_object INTEGER NOT NULL
+    , reference VARCHAR(15) NOT NULL
+    , uuid VARCHAR(36) NOT NULL
     , layer INTEGER NOT NULL
     , quantity INTEGER DEFAULT 1
-    , created_by VARCHAR(64)
-    , created_at TIMESTAMP DEFAULT NOW()
-    , updated_by VARCHAR(64)
-    , updated_at TIMESTAMP DEFAULT NOW()
     , CONSTRAINT unique_constraint UNIQUE (uuid, reference, id_object)
 )
 
 CREATE TABLE tsys_edges (
     id serial primary key
-    , id_tag INTEGER NOT NULL
+    , id_object INTEGER NOT NULL
     , reference VARCHAR(15) NOT NULL -- tag reference
-    , source_uid VARCHAR(36) NOT NULL
-    , target_uid VARCHAR(36) NOT NULL
+    , source_uuid VARCHAR(36) NOT NULL
+    , target_uuid VARCHAR(36) NOT NULL
     , type VARCHAR(50) DEFAULT 'default'
 )
 
@@ -138,9 +135,7 @@ CREATE TABLE tprod_routes (
     id SERIAL PRIMARY KEY
     , id_tag INTEGER REFERENCES tprod_producttags(id)
     , id_task INTEGER REFERENCES tprod_tasks(id)
-    , node_uid VARCHAR(36) NOT NULL
-    , node_level INTEGER NOT NULL
-    , node_quantity INTEGER DEFAULT 1
+    , quantity INTEGER DEFAULT 1
     , created_by VARCHAR(64)
     , created_at TIMESTAMP DEFAULT NOW()
     , updated_by VARCHAR(64)
