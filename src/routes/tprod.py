@@ -32,7 +32,7 @@ async def upsert_skills(input: TProdSkillUpsert, id_user: str = Depends(validate
     @db.catching(messages=SuccessMessages('Skill created!'))
     def tprod__upsert_skills(data: dict) -> DBOutput:
 
-        db.upsert(TProdSkills, [data], single=True)
+        db.upsert(TProdSkills, [data])
         db.session.commit()
 
         return db.query(None, statement=tprod_skills_query)

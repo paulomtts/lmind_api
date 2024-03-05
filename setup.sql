@@ -52,17 +52,18 @@ CREATE TABLE tsys_keywords (
     id_object INTEGER
     , reference VARCHAR(15) NOT NULL
     , keyword VARCHAR(30) NOT NULL
-    , CONSTRAINT unique_constraint UNIQUE (id_object, reference, keyword)
+    , CONSTRAINT tsys_keywords_unique_constraint UNIQUE (id_object, reference, keyword)
 );
 
 CREATE TABLE tsys_nodes (
     id serial primary key
     , id_object INTEGER NOT NULL
     , reference VARCHAR(15) NOT NULL
+    , type VARCHAR(50) DEFAULT 'default'
     , uuid VARCHAR(36) NOT NULL
     , layer INTEGER NOT NULL
     , quantity INTEGER DEFAULT 1
-    , CONSTRAINT unique_constraint UNIQUE (uuid, reference, id_object)
+    , CONSTRAINT tsys_nodes_unique_constraint UNIQUE (uuid, reference, id_object)
 )
 
 CREATE TABLE tsys_edges (
@@ -72,6 +73,7 @@ CREATE TABLE tsys_edges (
     , source_uuid VARCHAR(36) NOT NULL
     , target_uuid VARCHAR(36) NOT NULL
     , type VARCHAR(50) DEFAULT 'default'
+    , CONSTRAINT tsys_edges_unique_constraint UNIQUE (source_uuid, target_uuid, reference, id_object)
 )
 
 
@@ -128,7 +130,7 @@ create table tprod_producttags (
 	, registry_counter INTEGER
 	, produced_counter INTEGER
 	, subcategory VARCHAR(3)
-    , CONSTRAINT unique_tah UNIQUE (category, registry_counter, produced_counter, subcategory)
+    , CONSTRAINT tprod_producttags_unique_constraint UNIQUE (category, registry_counter, produced_counter, subcategory)
 );
 
 CREATE TABLE tprod_routes (

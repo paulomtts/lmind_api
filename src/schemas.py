@@ -35,6 +35,8 @@ class TableNames(BaseModel):
         'tsys_units'
         , 'tsys_categories'
         , 'tsys_keywords'
+        , 'tsys_nodes'
+        , 'tsys_edges'
         
         , 'tprod_resources'
         , 'tprod_skills'

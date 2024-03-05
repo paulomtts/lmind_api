@@ -9,7 +9,6 @@ from sqlalchemy.sql.selectable import Select
 from src.schemas import DBOutput, WhereConditions, SuccessMessages
 
 from collections import namedtuple
-from datetime import datetime
 from typing import List, Any
 from logging import Logger
 
@@ -317,6 +316,7 @@ class DBManager():
             - pandas.DataFrame or namedtuple: If single is False, returns a DataFrame containing the updated records.
             - If `single` is `True`, a `namedtuple` representing the first updated record.
         """
+
         statement = insert(table_cls).values(data_list).returning(table_cls)
 
         returnings = self.session.execute(statement)

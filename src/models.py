@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel
+from sqlalchemy import UniqueConstraint
 from datetime import datetime
 from typing import Optional, Literal
 from collections import namedtuple
@@ -40,7 +41,7 @@ class TSysUsers(TimestampModel, table=True):
     google_id: Optional[str] = Field(default=None, regex=REGEX_NUMBERS)
     google_email: str = Field(regex=EMAIL_REGEX)
     google_picture_url: str = Field(regex=URL_REGEX)
-    google_access_token: str = Field(...)
+    google_access_token: str = Field()
     name: str = Field(regex=REGEX_WORDS)
     locale: str = Field(regex=REGEX_WORDS)
 
@@ -77,6 +78,29 @@ class TSysKeywords(SQLModel, table=True):
     id_object: int = Field(primary_key=True)
     reference: str = Field(regex=REGEX_WORDS, primary_key=True)
     keyword: str = Field(regex=REGEX_WORDS, primary_key=True)
+
+class TSysNodes(SQLModel, table=True):
+    __tablename__ = 'tsys_nodes'
+    __tableargs__ = (UniqueConstraint('id_object', 'reference', 'uuid', name='unique_node'),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    id_object: int = Field()
+    reference: str = Field(regex=REGEX_WORDS)
+    type: str = Field(regex=REGEX_WORDS, default='default')
+    uuid: str = Field(regex=REGEX_UUID4)
+    layer: int = Field(default=1)
+    quantity: int = Field(default=1)
+
+class TSysEdges(SQLModel, table=True):
+    __tablename__ = 'tsys_edges'
+    __tableargs__ = (UniqueConstraint('id_object', 'reference', 'source_uuid', 'target_uuid', name='unique_edge'),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    id_object: int = Field()
+    reference: str = Field(regex=REGEX_WORDS)
+    source_uuid: str = Field(regex=REGEX_UUID4)
+    target_uuid: str = Field(regex=REGEX_UUID4)
+    type: str = Field(regex=REGEX_WORDS, default='default')
 
 
 # TPROD   
@@ -138,22 +162,24 @@ class TProdProducts(TimestampModel, UserstampModel, table=True):
     width: float = Field(default=0.0)
     depth: float = Field(default=0.0)
     id_unit_volume: int = Field(foreign_key='tsys_units.id') 
-
-class TProdRoutes(TimestampModel, UserstampModel, table=True):
+    
+class TProdRoutes(SQLModel, table=True):
     __tablename__ = 'tprod_routes'
 
     id: Optional[int] = Field(default=None, primary_key=True)
     id_tag: int = Field(foreign_key='tprod_producttags.id')
     id_task: int = Field(foreign_key='tprod_tasks.id')
-    node_uid: str = Field(regex=REGEX_UUID4)
-    node_level: int = Field(default=0)
-    node_quantity: int = Field(default=1)
+    quantity: int = Field(default=1)
+    created_by: str = Field(regex=REGEX_WORDS)
+    updated_by: str = Field(regex=REGEX_WORDS)
 
 
 SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])
 TABLE_MAP = {
     'tsys_categories': SimpleQuery("Categories", TSysCategories)
     , 'tsys_keywords': SimpleQuery("Keywords", TSysKeywords)
+    , 'tsys_nodes': SimpleQuery("Nodes", TSysNodes)
+    , 'tsys_edges': SimpleQuery("Edges", TSysEdges)
 
     , 'tprod_resourceskills': SimpleQuery("Resource's skills", TProdResourceSkills)
     , 'tprod_taskskills': SimpleQuery("Task's skills", TProdTaskSkills)
