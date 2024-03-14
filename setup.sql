@@ -62,7 +62,8 @@ CREATE TABLE tsys_nodes (
     , type VARCHAR(50) DEFAULT 'default'
     , uuid VARCHAR(36) NOT NULL
     , layer INTEGER NOT NULL
-    , quantity INTEGER DEFAULT 1
+    , position VARCHAR(255) NOT NULL
+    , ancestors TEXT
     , CONSTRAINT tsys_nodes_unique_constraint UNIQUE (uuid, reference, id_object)
 )
 

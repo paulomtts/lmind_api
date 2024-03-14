@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Optional, Literal
 from collections import namedtuple
 
+import json
+
 
 REGEX_SHA256 = r'^[a-fA-F0-9]{64}$'
 REGEX_UUID4 = r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$'
@@ -89,7 +91,8 @@ class TSysNodes(SQLModel, table=True):
     type: str = Field(regex=REGEX_WORDS, default='default')
     uuid: str = Field(regex=REGEX_UUID4)
     layer: int = Field(default=1)
-    quantity: int = Field(default=1)
+    position: str = Field(nullable=False, default=json.dumps({"x": 0, "y": 0}))
+    ancestors: str = Field(default=json.dumps([]))
 
 class TSysEdges(SQLModel, table=True):
     __tablename__ = 'tsys_edges'
