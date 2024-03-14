@@ -64,7 +64,6 @@ class TSysCategoriesInsert(BaseModel):
             )
         return value
         
-
 class TSysCategoriesChangeStatus(BaseModel):
     id: int = Field(..., gt=0)
     status: bool
@@ -128,8 +127,8 @@ class TaskObject(BaseModel):
     updated_at: Optional[str] = None
 
     @validator('name', 'description', 'duration', 'id_unit', 'interruptible')
-    def name_must_not_be_empty(cls, value):
-        if not value:
+    def must_not_be_empty(cls, value):
+        if value == None or value == '':
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Required fields must not be empty.',

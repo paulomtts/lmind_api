@@ -166,8 +166,13 @@ async def auth_callback(request: Request, code: str = Query(...)):
                 user = db.query(TSysRoles, filters=filters, single=True)
 
                 if user:
+                    print(user_data)
                     user_data['id_role'] = user.id
                     user_data['updated_at'] = datetime.datetime.utcnow()
+                    
+                    if not user_data.get('locale', None):
+                        user_data['locale'] = 'pt-br'
+                        
                     google_user = db.upsert(TSysUsers, [user_data], single=True)
 
                     if google_user:
