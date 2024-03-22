@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TSysUsers, TSysUnits, TSysCategories
+from src.models import TSysUsers, TSysUnits, TSysCategories, TSysNodes, TSysEdges, TProdRoutes
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
-from src.routes.schemas import TSysUnitInsert, TSysUnitDelete, TProdProductTagCheckAvailability, TProdProductTagInsert, TSysCategoriesInsert, TSysCategoriesChangeStatus
+from src.routes.schemas import *
 from src.queries import tsys_units_query
 
 from collections import namedtuple
@@ -46,9 +46,9 @@ async def upsert_units(input: TSysUnitInsert, id_user: str = Depends(validate_se
     Insert symbols and return the entire table.
     """
 
-    data = input.dict()
-    append_timestamps(data)
-    append_userstamps(data, id_user)
+    data = input.unit.dict()
+    append_timestamps(TSysUnits, data)
+    append_userstamps(TSysUnits, data, id_user)
         
     @api_output
     @db.catching(messages=SuccessMessages('Unit created!'))
@@ -89,8 +89,8 @@ async def insert_category(input: TSysCategoriesInsert, id_user: str = Depends(va
     """
 
     data = input.dict()
-    append_timestamps(data)
-    append_userstamps(data, id_user)
+    append_timestamps(TSysCategories, data)
+    append_userstamps(TSysCategories, data, id_user)
 
     @api_output
     @db.catching(messages=SuccessMessages('Category created!'))
@@ -110,7 +110,7 @@ async def update_category(input: TSysCategoriesChangeStatus, id_user: str = Depe
     """
 
     data = input.dict()
-    append_timestamps(data)
+    append_timestamps(TSysCategories, data)
     append_userstamps(TSysCategories, data, id_user)
 
     filters = WhereConditions(and_={'id': [data['id']]})

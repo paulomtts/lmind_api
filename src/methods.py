@@ -40,10 +40,14 @@ def append_userstamps(table_cls, data: Union[List[dict], dict, pd.DataFrame], id
     Appends the user ID to the data.
     """
 
+    inspector = inspect(table_cls)
+    pk_columns = [pk.name for pk in inspector.primary_key]
+    mode = 'update'
+
     def set_stamps(row: Union[dict, pd.Series], mode: str):
+        if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
+
         table_columns = [col.name for col in table_cls.__table__.columns]
-
-
         if mode == 'insert':
             if 'created_by' in table_columns:
                 row['created_by'] = id_user
@@ -56,50 +60,51 @@ def append_userstamps(table_cls, data: Union[List[dict], dict, pd.DataFrame], id
             row.pop('created_at', None)
 
 
-    inspector = inspect(table_cls)
-    pk_columns = [pk.name for pk in inspector.primary_key]
-    mode = 'update'
-
     if isinstance(data, list) and all(isinstance(row, dict) for row in data):
         for row in data:
-            if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
-            set_stamps(row, mode)
-
-    elif isinstance(data, pd.DataFrame):
-        for _, row in data.iterrows():
-            if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
             set_stamps(row, mode)
 
     elif isinstance(data, dict):
-        if not any(data.get(pk) for pk in pk_columns): mode = 'insert'
         set_stamps(data, mode)
 
-def append_timestamps(data: Union[List[dict], dict, pd.DataFrame]) -> list[dict]:
+    elif isinstance(data, pd.DataFrame):
+        data.apply(set_stamps, axis=1, mode=mode)
+
+    else:
+        raise TypeError(f"Could not append userstamps. Current data type {type(data)} is not supported.")
+
+
+def append_timestamps(table_cls, data: Union[List[dict], dict, pd.DataFrame]) -> list[dict]:
     """
     Appends the current timestamp to the data.
     """
 
-    if isinstance(data, list) and all(isinstance(row, dict) for row in data):
-        for row in data:
-            if 'created_at' in row.keys() and not row.get('created_at'):
+    inspector = inspect(table_cls)
+    pk_columns = [pk.name for pk in inspector.primary_key]
+    mode = 'update'
+
+    def set_stamps(row: Union[dict, pd.Series], mode: str):
+        if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
+
+        table_columns = [col.name for col in table_cls.__table__.columns]
+        if mode == 'insert':
+            if 'created_at' in table_columns:
                 row['created_at'] = datetime.datetime.utcnow()
 
-            if 'updated_at' in row.keys():
-                row['updated_at'] = datetime.datetime.utcnow()
+        if 'updated_at' in table_columns:
+            row['updated_at'] = datetime.datetime.utcnow()
+
+
+    if isinstance(data, list) and all(isinstance(row, dict) for row in data):
+        for row in data:
+            set_stamps(row, mode)
 
     elif isinstance(data, dict):
-        if 'created_at' in data.keys() and not data.get('created_at'):
-            data['created_at'] = datetime.datetime.utcnow()
-
-        if 'updated_at' in data.keys():
-            data['updated_at'] = datetime.datetime.utcnow()
+        set_stamps(data, mode)
 
     elif isinstance(data, pd.DataFrame):
-        if 'created_at' in data.columns:
-            data['created_at'].fillna(datetime.datetime.utcnow(), inplace=True)
+        data.apply(set_stamps, axis=1, mode=mode)
 
-        if 'updated_at' in data.columns:
-            data['updated_at'] = datetime.datetime.utcnow()
     else:
         raise TypeError(f"Could not append timestamps. Current data type {type(data)} is not supported.")
 

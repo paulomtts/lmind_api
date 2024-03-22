@@ -13,6 +13,7 @@ class ForbiddenOperationError(Exception):
 class WhereConditions(BaseModel):
     or_: Optional[dict[str, List[str | int | None]]] = {}
     and_: Optional[dict[str, List[str | int | None]]] = {}
+    not_in_: Optional[dict[str, List[str | int | None]]] = {}
     like_: Optional[dict[str, List[str | int | None]]] = {}
     not_like_: Optional[dict[str, List[str | int | None]]] = {}
 

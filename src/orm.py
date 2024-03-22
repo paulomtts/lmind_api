@@ -170,7 +170,7 @@ class DBManager():
         return df
     
 
-    def _parse_returnings(self, returnings: List, mapping_cls: Any = None):
+    def _parse_returnings(self, returnings: list, mapping_cls: Any = None):
         """
         Parses the returnings from a database query and returns the result as a pandas DataFrame.
 
@@ -237,6 +237,10 @@ class DBManager():
             if filters.or_:
                 or_conditions = [getattr(table_cls, column).in_(values) for column, values in filters.or_.items()]
                 conditions.append(or_(*or_conditions))
+
+            if filters.not_in_:
+                not_conditions = [getattr(table_cls, column).notin_(values) for column, values in filters.not_in_.items()]
+                conditions.append(and_(*not_conditions))
 
             if filters.like_:
                 like_conditions = [getattr(table_cls, attr).like(val) for attr, values in filters.like_.items() for val in values]
@@ -425,6 +429,10 @@ class DBManager():
             inspector = inspect(table_cls)
             pk_columns = [column.name for column in inspector.primary_key] 
             pk_value_list = [getattr(table_cls, pk) for pk in pk_columns]
+
+            for pk in pk_columns: # reason: do not try to upsert with empty primary keys
+                if data.get(pk) is None:
+                    data.pop(pk, None)
             
             conditions = self._build_conditions(table_cls)
             statement = postgres_upsert(table_cls).values(data)\

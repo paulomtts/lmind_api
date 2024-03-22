@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends
 from src.start import db
 from src.auth import validate_session
 from src.methods import api_output, append_userstamps, append_timestamps
-from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills, TSysKeywords, TProdTaskSkills, TProdProductTags
+from src.models import TProdSkills, TProdResources, TProdTasks, TProdResourceSkills, TSysKeywords, TProdTaskSkills, TProdProductTags, TSysNodes, TSysEdges, TProdRoutes
 from src.schemas import DBOutput, SuccessMessages, WhereConditions
 from src.routes.schemas import *
 from src.queries import tprod_skills_query, tprod_resources_query, tprod_tasks_query
 
 import os
+import json
 
 
 tprod_router = APIRouter()
@@ -25,7 +26,7 @@ async def upsert_skills(input: TProdSkillUpsert, id_user: str = Depends(validate
     data = input.dict()
     if not data.get('id'): data.pop('id')
 
-    append_timestamps(data)
+    append_timestamps(TProdSkills, data)
     append_userstamps(TProdSkills, data, id_user)
         
     @api_output
@@ -72,7 +73,7 @@ async def upsert_resources(input: TProdResourceUpsert, id_user: str = Depends(va
     
     if not resource.get('id'): resource.pop('id', None)
 
-    append_timestamps(resource)
+    append_timestamps(TProdResources, resource)
     append_userstamps(TProdResources, resource, id_user)
 
     @api_output
@@ -132,7 +133,7 @@ async def upsert_tasks(input: TProdTaskUpsert, id_user: str = Depends(validate_s
 
     if not task.get('id'): task.pop('id')
 
-    append_timestamps(task)
+    append_timestamps(TProdTasks, task)
     append_userstamps(TProdTasks, task, id_user)
         
     @api_output
@@ -179,7 +180,7 @@ async def delete_tasks(input: TProdTaskDelete):
     return tprod__delete_tasks(filters)
 
 
-
+# tprod_producttags
 @tprod_router.post("/tprod/products/tag-check-availability", dependencies=[Depends(validate_session)])
 async def product_tag_check_availability(input: TProdProductTagCheckAvailability):
     """
@@ -210,4 +211,91 @@ async def product_tag_check_availability(input: TProdProductTagCheckAvailability
         return {'available': True, 'message': ''}
     return tprod__product_tag_check_availability(filters)
 
+
+# tprod_routes
+@tprod_router.post("/tprod/routes/upsert")
+async def upsert_routes(input: TSysRouteUpsert, id_user: str = Depends(validate_session)):
+    """
+    Insert nodes, edges and routes and return the entire table.
+    """
+    tag = input.tag.dict()
+    nodes = [node.dict() for node in input.nodes]
+    edges = [edge.dict() for edge in input.edges]
+    routes = [route.dict() for route in input.routes_data]
     
+    @api_output
+    @db.catching(messages=SuccessMessages('Nodes upserted!'))
+    def tprod__upsert_routes(tag: dict, nodes: list[dict], edges: list[dict], routes: list[dict]) -> DBOutput:
+        
+        # Upsert tag, has unique constraint on category and registry_counter
+        tag['id'] = 33
+        new_tag = db.upsert(TProdProductTags, data_list=[tag], single=True)
+
+        # Prepare nodes and edges
+        for nd in nodes:
+            nd['id_object'] = new_tag.id
+            nd['reference'] = 'tprod_producttags'
+            nd['position'] = json.dumps(nd['position'])
+            nd['ancestors'] = json.dumps(nd['ancestors'])
+        for ed in edges:
+            ed['id_object'] = new_tag.id
+            ed['reference'] = 'tprod_producttags'
+        for rt in routes:
+            rt['id_tag'] = new_tag.id
+       
+
+        # Delete non-present nodes, edges and routes
+        delete_routes = WhereConditions(
+            and_={
+                'id_tag': [new_tag.id]
+            }
+            , not_in_={
+                'id_task': [rt['id_task'] for rt in routes if rt.get('id_task')]
+            }
+            , not_like_={
+                'node_uuid': [rt['node_uuid'] for rt in routes if rt.get('node_uuid')]
+            }
+        )
+        delete_nodes = WhereConditions(
+            and_={
+                'id_object': [new_tag.id]
+                , 'reference': [node['reference'] for node in nodes]
+            }
+            , not_like_={
+                'id': [nd['id'] for nd in nodes if nd.get('id')]
+            }
+        )
+        delete_edges = WhereConditions(
+            and_={
+                'id_object': [new_tag.id]
+                , 'reference': [edge['reference'] for edge in edges]
+            }
+            , not_in_={
+                'id': [ed['id'] for ed in edges if ed.get('id')]
+            }
+        )
+
+        db.delete(TProdRoutes, filters=delete_routes)
+        db.delete(TSysNodes, filters=delete_nodes)
+        db.delete(TSysEdges, filters=delete_edges)
+
+        # Upsert nodes, edges and routes
+        append_timestamps(TProdRoutes, routes)
+        append_userstamps(TProdRoutes, routes, id_user)
+
+        db.upsert(TProdRoutes, routes)
+
+        new_nodes = db.upsert(TSysNodes, nodes)
+        new_edges = db.upsert(TSysEdges, edges)
+
+        # Parse json fields
+        new_nodes['position'] = new_nodes['position'].apply(json.loads)
+        new_nodes['ancestors'] = new_nodes['ancestors'].apply(json.loads)
+
+        return {
+            'tprod_producttags': new_tag
+            , 'tsys_nodes': new_nodes
+            , 'tsys_edges': new_edges
+        }
+
+    return tprod__upsert_routes(tag, nodes, edges, routes)

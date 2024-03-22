@@ -166,15 +166,12 @@ class TProdProducts(TimestampModel, UserstampModel, table=True):
     depth: float = Field(default=0.0)
     id_unit_volume: int = Field(foreign_key='tsys_units.id') 
     
-class TProdRoutes(SQLModel, table=True):
+class TProdRoutes(TimestampModel, UserstampModel, table=True):
     __tablename__ = 'tprod_routes'
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    id_tag: int = Field(foreign_key='tprod_producttags.id')
-    id_task: int = Field(foreign_key='tprod_tasks.id')
-    quantity: int = Field(default=1)
-    created_by: str = Field(regex=REGEX_WORDS)
-    updated_by: str = Field(regex=REGEX_WORDS)
+    id_tag: int = Field(foreign_key='tprod_producttags.id', primary_key=True)
+    id_task: int = Field(foreign_key='tprod_tasks.id', primary_key=True)
+    node_uuid: str = Field(regex=REGEX_UUID4)
 
 
 SimpleQuery = namedtuple('SimpleQuery', ['name', 'cls'])

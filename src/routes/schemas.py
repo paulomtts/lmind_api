@@ -4,7 +4,7 @@ from typing import Optional, Literal
 from fastapi import HTTPException, status
 
 # TSYS
-class TSysUnitsBase(BaseModel):
+class UnitObject(BaseModel):
     name: str
     abbreviation: str
     type: str
@@ -33,10 +33,10 @@ class TSysUnitsBase(BaseModel):
             )
         return value
 
-class TSysUnitInsert(TSysUnitsBase):
-    pass
+class TSysUnitInsert(BaseModel):
+    unit: UnitObject
 
-class TSysUnitDelete(TSysUnitsBase):
+class TSysUnitDelete(BaseModel):
     id: int = Field(..., gt=0)
 
 
@@ -67,6 +67,43 @@ class TSysCategoriesInsert(BaseModel):
 class TSysCategoriesChangeStatus(BaseModel):
     id: int = Field(..., gt=0)
     status: bool
+
+
+class ProductTagObject(BaseModel):
+    id: Optional[int] = None
+    category: str
+    registry_counter: int
+    produced_counter: Optional[int] = 0
+    subcategory: Optional[str] = None
+
+class NodeObject(BaseModel):
+    id: Optional[int] = None
+    id_object: Optional[int] = None
+    reference: Optional[str] = None
+    type: str
+    uuid: str
+    layer: int
+    position: dict[str, int]
+    ancestors: list
+
+class EdgeObject(BaseModel):
+    id: Optional[int] = None
+    id_object: Optional[int] = None
+    reference: Optional[str] = None
+    source_uuid: str
+    target_uuid: str
+    type: str
+
+class RouteData(BaseModel):
+    id_tag: Optional[int] = None
+    id_task: int
+    node_uuid: str
+
+class TSysRouteUpsert(BaseModel):
+    tag: ProductTagObject
+    nodes: list[NodeObject]
+    edges: Optional[list[EdgeObject]]
+    routes_data: list[RouteData]
 
 
 # TPROD
