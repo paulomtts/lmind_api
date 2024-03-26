@@ -45,8 +45,8 @@ def append_userstamps(table_cls, data: Union[List[dict], dict, pd.DataFrame], id
     mode = 'update'
 
     def set_stamps(row: Union[dict, pd.Series], mode: str):
-        if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
-
+        if not all(row.get(pk) for pk in pk_columns): mode = 'insert'
+        print([row.get(pk) for pk in pk_columns], mode)
         table_columns = [col.name for col in table_cls.__table__.columns]
         if mode == 'insert':
             if 'created_by' in table_columns:
@@ -84,7 +84,7 @@ def append_timestamps(table_cls, data: Union[List[dict], dict, pd.DataFrame]) ->
     mode = 'update'
 
     def set_stamps(row: Union[dict, pd.Series], mode: str):
-        if not any(row.get(pk) for pk in pk_columns): mode = 'insert'
+        if not all(row.get(pk) for pk in pk_columns): mode = 'insert'
 
         table_columns = [col.name for col in table_cls.__table__.columns]
         if mode == 'insert':

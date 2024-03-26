@@ -8,6 +8,7 @@ from sqlalchemy.sql.selectable import Select
 
 from src.schemas import DBOutput, WhereConditions, SuccessMessages
 
+from traceback import format_exc
 from collections import namedtuple
 from typing import List, Any
 from logging import Logger
@@ -127,8 +128,9 @@ class DBManager():
         - __init__: Initializes the DBManager object.
         - __del__: Closes the session and releases resources when the object is destroyed.
         - _map_dataframe: Maps a dataframe to the specified mapping class.
-        - current_datetime: Returns the current datetime in the database.
-        - parse_returnings: Parses the returnings from a database query and returns the result as a pandas DataFrame.
+        - _parse_returnings: Parses the returnings from a database query and returns the result as a pandas DataFrame.
+        - _single: Returns the first record from a DataFrame as a namedtuple.
+        - _build_conditions: Builds the conditions for a query.
         - query: Executes a query on the specified table class with optional filters and ordering.
         - insert: Inserts data into the specified table.
         - update: Updates records in the specified table with the given data.
@@ -487,7 +489,7 @@ class DBManager():
                     self.session.rollback()
 
                     error = ERROR_MAP.get(type(e), ERROR_MAP[Exception])
-                    self.logger.error(f"{error.logger_message}\nMethod: <{func.__name__}>\nMessage:\n\n {e}.\n")
+                    self.logger.error(f"{error.logger_message}\nMethod: <{func.__name__}>\nMessage:\n\n {e}.\nTraceback:\n{format_exc()}")
 
                     return DBOutput(
                         data=[]

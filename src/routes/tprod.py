@@ -10,6 +10,8 @@ from src.queries import tprod_skills_query, tprod_resources_query, tprod_tasks_q
 
 import os
 import json
+import datetime
+import pandas as pd
 
 
 tprod_router = APIRouter()
@@ -226,10 +228,57 @@ async def upsert_routes(input: TSysRouteUpsert, id_user: str = Depends(validate_
     @api_output
     @db.catching(messages=SuccessMessages('Nodes upserted!'))
     def tprod__upsert_routes(tag: dict, nodes: list[dict], edges: list[dict], routes: list[dict]) -> DBOutput:
-        
+
         # Upsert tag, has unique constraint on category and registry_counter
-        tag['id'] = 33
         new_tag = db.upsert(TProdProductTags, data_list=[tag], single=True)
+
+        current_timestamp = datetime.datetime.now(datetime.UTC)
+        input_uuids = [rt['node_uuid'] for rt in routes]
+
+        # Get current routes
+        current_routes_df = db.query(
+            TProdRoutes
+            , statement=None
+            , filters=WhereConditions(
+                and_={
+                    'id_tag': [new_tag.id]
+                }
+            )
+        )
+
+        # Build updated routes data
+        to_update_df = current_routes_df[current_routes_df['node_uuid'].isin(input_uuids)].copy()
+        
+        for index in to_update_df.index:
+            to_update_df.loc[index, 'updated_by'] = id_user
+            to_update_df.loc[index, 'updated_at'] = current_timestamp
+
+        # Build new routes data
+        update_uuids = to_update_df['node_uuid'].tolist()
+        insert_uuids = [uuid for uuid in input_uuids if uuid not in update_uuids]
+
+        new_routes = []
+        for rt in routes:
+            if rt['node_uuid'] in insert_uuids:
+                new_rt = {
+                    'id_tag': new_tag.id
+                    , 'id_task': rt['id_task']
+                    , 'node_uuid': rt['node_uuid']
+                    , 'created_by': id_user
+                    , 'created_at': current_timestamp
+                    , 'updated_by': id_user
+                    , 'updated_at': current_timestamp
+                }
+                new_routes.append(new_rt)
+        
+        to_insert_df = pd.DataFrame(new_routes)
+
+        # Concatenate current and new routes
+        to_update_df.dropna(axis=1, how='all', inplace=True)
+        to_insert_df.dropna(axis=1, how='all', inplace=True)
+        routes = pd.concat([to_update_df, to_insert_df]).to_dict(orient='records')
+
+        to_delete_df = current_routes_df[~current_routes_df['node_uuid'].isin(input_uuids)]
 
         # Prepare nodes and edges
         for nd in nodes:
@@ -240,20 +289,13 @@ async def upsert_routes(input: TSysRouteUpsert, id_user: str = Depends(validate_
         for ed in edges:
             ed['id_object'] = new_tag.id
             ed['reference'] = 'tprod_producttags'
-        for rt in routes:
-            rt['id_tag'] = new_tag.id
        
-
         # Delete non-present nodes, edges and routes
         delete_routes = WhereConditions(
             and_={
-                'id_tag': [new_tag.id]
-            }
-            , not_in_={
-                'id_task': [rt['id_task'] for rt in routes if rt.get('id_task')]
-            }
-            , not_like_={
-                'node_uuid': [rt['node_uuid'] for rt in routes if rt.get('node_uuid')]
+                'id_tag': to_delete_df['id_tag'].tolist()
+                , 'id_task': to_delete_df['id_task'].tolist()
+                , 'node_uuid': to_delete_df['node_uuid'].tolist()
             }
         )
         delete_nodes = WhereConditions(
@@ -280,9 +322,6 @@ async def upsert_routes(input: TSysRouteUpsert, id_user: str = Depends(validate_
         db.delete(TSysEdges, filters=delete_edges)
 
         # Upsert nodes, edges and routes
-        append_timestamps(TProdRoutes, routes)
-        append_userstamps(TProdRoutes, routes, id_user)
-
         db.upsert(TProdRoutes, routes)
 
         new_nodes = db.upsert(TSysNodes, nodes)

@@ -24,7 +24,7 @@ app.add_middleware( # necessary to allow requests from local services
     allow_credentials=True,
 )
 
-app.include_router(crud_router)    # reason: uncomment when developing or testing locally
+app.include_router(crud_router)
 app.include_router(auth_router)
 app.include_router(tsys_router)
 app.include_router(tprod_router)
